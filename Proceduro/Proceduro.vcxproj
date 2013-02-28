@@ -1,0 +1,152 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\Code\console.cpp" />
+    <ClCompile Include="..\Code\cpuclass.cpp" />
+    <ClCompile Include="..\Code\CylinderObject.cpp" />
+    <ClCompile Include="..\Code\d3dclass.cpp" />
+    <ClCompile Include="..\Code\ExplodeShader.cpp" />
+    <ClCompile Include="..\Code\fontclass.cpp" />
+    <ClCompile Include="..\Code\FontShader.cpp" />
+    <ClCompile Include="..\Code\GameCamera.cpp" />
+    <ClCompile Include="..\Code\GameObject.cpp" />
+    <ClCompile Include="..\Code\GameTimer.cpp" />
+    <ClCompile Include="..\Code\GraphicsClass.cpp" />
+    <ClCompile Include="..\Code\HorizontalBlurShader.cpp" />
+    <ClCompile Include="..\Code\MultiTextureShader.cpp" />
+    <ClCompile Include="..\Code\OrthoTextureShader.cpp" />
+    <ClCompile Include="..\Code\OrthoWindow.cpp" />
+    <ClCompile Include="..\Code\RenderTexture.cpp" />
+    <ClCompile Include="..\Code\SimpleTextureShader.cpp" />
+    <ClCompile Include="..\Code\Terrain.cpp" />
+    <ClCompile Include="..\Code\inputclass.cpp" />
+    <ClCompile Include="..\Code\LightShader.cpp" />
+    <ClCompile Include="..\Code\main.cpp" />
+    <ClCompile Include="..\Code\IShader.cpp" />
+    <ClCompile Include="..\Code\SimplexNoise.cpp" />
+    <ClCompile Include="..\Code\systemclass.cpp" />
+    <ClCompile Include="..\Code\TerrainGenerator.cpp" />
+    <ClCompile Include="..\Code\TexShader.cpp" />
+    <ClCompile Include="..\Code\textclass.cpp" />
+    <ClCompile Include="..\Code\TextureLoader.cpp" />
+    <ClCompile Include="..\Code\Tree.cpp" />
+    <ClCompile Include="..\Code\TreeSegment.cpp" />
+    <ClCompile Include="..\Code\VerticalBlurShader.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Code\console.h" />
+    <ClInclude Include="..\Code\cpuclass.h" />
+    <ClInclude Include="..\Code\CylinderObject.h" />
+    <ClInclude Include="..\Code\d3dclass.h" />
+    <ClInclude Include="..\Code\d3dUtil.h" />
+    <ClInclude Include="..\Code\ExplodeShader.h" />
+    <ClInclude Include="..\Code\fontclass.h" />
+    <ClInclude Include="..\Code\FontShader.h" />
+    <ClInclude Include="..\Code\GameCamera.h" />
+    <ClInclude Include="..\Code\GameObject.h" />
+    <ClInclude Include="..\Code\GameTimer.h" />
+    <ClInclude Include="..\Code\GraphicsClass.h" />
+    <ClInclude Include="..\Code\HorizontalBlurShader.h" />
+    <ClInclude Include="..\Code\MultiTextureShader.h" />
+    <ClInclude Include="..\Code\OrthoTextureShader.h" />
+    <ClInclude Include="..\Code\OrthoWindow.h" />
+    <ClInclude Include="..\Code\RenderTexture.h" />
+    <ClInclude Include="..\Code\SimpleTextureShader.h" />
+    <ClInclude Include="..\Code\Terrain.h" />
+    <ClInclude Include="..\Code\inputclass.h" />
+    <ClInclude Include="..\Code\Light.h" />
+    <ClInclude Include="..\Code\LightShader.h" />
+    <ClInclude Include="..\Code\IShader.h" />
+    <ClInclude Include="..\Code\SimplexNoise.h" />
+    <ClInclude Include="..\Code\systemclass.h" />
+    <ClInclude Include="..\Code\TerrainGenerator.h" />
+    <ClInclude Include="..\Code\TexShader.h" />
+    <ClInclude Include="..\Code\textclass.h" />
+    <ClInclude Include="..\Code\TextureLoader.h" />
+    <ClInclude Include="..\Code\TgaHeader.h" />
+    <ClInclude Include="..\Code\Tree.h" />
+    <ClInclude Include="..\Code\TreeSegment.h" />
+    <ClInclude Include="..\Code\Vertex.h" />
+    <ClInclude Include="..\Code\VerticalBlurShader.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\color2.fx" />
+    <None Include="Shaders\explodegeometry.fx" />
+    <None Include="Shaders\font.fx" />
+    <None Include="Shaders\horizontalblur.fx" />
+    <None Include="Shaders\lighthelper.fx" />
+    <None Include="Shaders\lighting.fx" />
+    <None Include="Shaders\multitexture.fx" />
+    <None Include="Shaders\orthotexture.fx" />
+    <None Include="Shaders\simpletexture.fx" />
+    <None Include="Shaders\texture.fx" />
+    <None Include="Shaders\verticalblur.fx" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{4088DCDF-23FB-42FD-81D2-11DB1823BB57}</ProjectGuid>
+    <RootNamespace>Proceduro</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <IgnoreSpecificDefaultLibraries>LIBMCT;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <AdditionalDependencies>wininet.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Program Files\Autodesk\FBX\FBX SDK\2013.3\lib\vs2010\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>C:\Program Files\Autodesk\FBX\FBX SDK\2013.3\lib\vs2010\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

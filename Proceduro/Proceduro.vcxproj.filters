@@ -1,0 +1,308 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Header Files\Utilities">
+      <UniqueIdentifier>{b7a72081-59ac-4cc9-a43d-6d80f030e195}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\GraphicSystem">
+      <UniqueIdentifier>{3ee17602-f5a6-4601-9dc3-34b9b40884e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\System">
+      <UniqueIdentifier>{252adc97-fc41-4099-944c-4a35c700f793}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Shaders">
+      <UniqueIdentifier>{1e225fa3-2b6b-4586-a1fa-fc6282c1d45a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Objects">
+      <UniqueIdentifier>{44d8653c-f79b-43cd-8a2d-c561c2de0690}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Objects\Terrain">
+      <UniqueIdentifier>{9185cb4b-3620-41a0-910f-7e909f217f82}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Utilities">
+      <UniqueIdentifier>{a4217846-6cf2-4a7d-8ab3-007183a7b495}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\System">
+      <UniqueIdentifier>{c4a5fb9d-3fac-448e-b9b7-53ee960bacd6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Shaders">
+      <UniqueIdentifier>{2768808a-95a9-4fde-940b-ba4612eb999a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GraphicSystem">
+      <UniqueIdentifier>{b0d1f27d-db5f-4660-af66-c8fcb986894d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Objects">
+      <UniqueIdentifier>{706c9eae-0419-467f-9521-ccd137836ce7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Objects\Terrain">
+      <UniqueIdentifier>{68d8ceeb-9f25-4774-a1a5-118de42e3687}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="EffectFiles">
+      <UniqueIdentifier>{3461adc5-ebb4-4530-812c-881a641a9653}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Utilities\MathUtils">
+      <UniqueIdentifier>{29e0b1e3-87c5-42e1-a763-0bd43b4b5a05}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Utilities\MathUtils">
+      <UniqueIdentifier>{b77db811-7425-4a47-bc05-7605de617488}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Objects\Tree">
+      <UniqueIdentifier>{03e14550-f47c-4de3-97e8-86966499255a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Objects\Tree">
+      <UniqueIdentifier>{0ec813bf-4607-4a07-8f9b-b25697722b44}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\GameCameras">
+      <UniqueIdentifier>{35e4e9e7-71d2-49b6-ae53-05d777a3c6ed}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GameCameras">
+      <UniqueIdentifier>{1e3cfe63-1aa1-42f1-943d-80a3b14f6234}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\Code\d3dclass.cpp">
+      <Filter>Source Files\GraphicSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\GameCamera.cpp">
+      <Filter>Source Files\GameCameras</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\GameObject.cpp">
+      <Filter>Source Files\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\GameTimer.cpp">
+      <Filter>Source Files\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\ExplodeShader.cpp">
+      <Filter>Source Files\Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\console.cpp">
+      <Filter>Source Files\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\LightShader.cpp">
+      <Filter>Source Files\Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\systemclass.cpp">
+      <Filter>Source Files\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\TextureLoader.cpp">
+      <Filter>Source Files\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\TexShader.cpp">
+      <Filter>Source Files\Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\inputclass.cpp">
+      <Filter>Source Files\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\cpuclass.cpp">
+      <Filter>Source Files\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\fontclass.cpp">
+      <Filter>Source Files\GraphicSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\textclass.cpp">
+      <Filter>Source Files\GraphicSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\SimplexNoise.cpp">
+      <Filter>Source Files\Utilities\MathUtils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\CylinderObject.cpp">
+      <Filter>Source Files\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\Tree.cpp">
+      <Filter>Source Files\Objects\Tree</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\TreeSegment.cpp">
+      <Filter>Source Files\Objects\Tree</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\TerrainGenerator.cpp">
+      <Filter>Source Files\Objects\Terrain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\Terrain.cpp">
+      <Filter>Source Files\Objects\Terrain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\HorizontalBlurShader.cpp">
+      <Filter>Source Files\Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\VerticalBlurShader.cpp">
+      <Filter>Source Files\Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\OrthoWindow.cpp">
+      <Filter>Source Files\GraphicSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\GraphicsClass.cpp">
+      <Filter>Source Files\GraphicSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\SimpleTextureShader.cpp">
+      <Filter>Source Files\Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\RenderTexture.cpp">
+      <Filter>Source Files\GraphicSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\OrthoTextureShader.cpp">
+      <Filter>Source Files\Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\IShader.cpp">
+      <Filter>Source Files\Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\MultiTextureShader.cpp">
+      <Filter>Source Files\Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\FontShader.cpp">
+      <Filter>Source Files\Shaders</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Code\GameObject.h">
+      <Filter>Header Files\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\console.h">
+      <Filter>Header Files\Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\d3dUtil.h">
+      <Filter>Header Files\Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\Vertex.h">
+      <Filter>Header Files\Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\TgaHeader.h">
+      <Filter>Header Files\Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\Light.h">
+      <Filter>Header Files\Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\GameTimer.h">
+      <Filter>Header Files\Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\GameCamera.h">
+      <Filter>Header Files\GameCameras</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\d3dclass.h">
+      <Filter>Header Files\GraphicSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\systemclass.h">
+      <Filter>Header Files\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\ExplodeShader.h">
+      <Filter>Header Files\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\TextureLoader.h">
+      <Filter>Header Files\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\LightShader.h">
+      <Filter>Header Files\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\TexShader.h">
+      <Filter>Header Files\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\inputclass.h">
+      <Filter>Header Files\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\cpuclass.h">
+      <Filter>Header Files\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\fontclass.h">
+      <Filter>Header Files\GraphicSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\textclass.h">
+      <Filter>Header Files\GraphicSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\SimplexNoise.h">
+      <Filter>Header Files\Utilities\MathUtils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\CylinderObject.h">
+      <Filter>Header Files\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\Tree.h">
+      <Filter>Header Files\Objects\Tree</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\TreeSegment.h">
+      <Filter>Header Files\Objects\Tree</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\TerrainGenerator.h">
+      <Filter>Header Files\Objects\Terrain</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\Terrain.h">
+      <Filter>Header Files\Objects\Terrain</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\HorizontalBlurShader.h">
+      <Filter>Header Files\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\VerticalBlurShader.h">
+      <Filter>Header Files\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\OrthoWindow.h">
+      <Filter>Header Files\GraphicSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\GraphicsClass.h">
+      <Filter>Header Files\GraphicSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\SimpleTextureShader.h">
+      <Filter>Header Files\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\RenderTexture.h">
+      <Filter>Header Files\GraphicSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\OrthoTextureShader.h">
+      <Filter>Header Files\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\IShader.h">
+      <Filter>Header Files\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\MultiTextureShader.h">
+      <Filter>Header Files\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\FontShader.h">
+      <Filter>Header Files\Shaders</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\color2.fx">
+      <Filter>EffectFiles</Filter>
+    </None>
+    <None Include="Shaders\texture.fx">
+      <Filter>EffectFiles</Filter>
+    </None>
+    <None Include="Shaders\explodegeometry.fx">
+      <Filter>EffectFiles</Filter>
+    </None>
+    <None Include="Shaders\font.fx">
+      <Filter>EffectFiles</Filter>
+    </None>
+    <None Include="Shaders\lighthelper.fx">
+      <Filter>EffectFiles</Filter>
+    </None>
+    <None Include="Shaders\lighting.fx">
+      <Filter>EffectFiles</Filter>
+    </None>
+    <None Include="Shaders\multitexture.fx">
+      <Filter>EffectFiles</Filter>
+    </None>
+    <None Include="Shaders\verticalblur.fx">
+      <Filter>EffectFiles</Filter>
+    </None>
+    <None Include="Shaders\horizontalblur.fx">
+      <Filter>EffectFiles</Filter>
+    </None>
+    <None Include="Shaders\simpletexture.fx">
+      <Filter>EffectFiles</Filter>
+    </None>
+    <None Include="Shaders\orthotexture.fx">
+      <Filter>EffectFiles</Filter>
+    </None>
+  </ItemGroup>
+</Project>
