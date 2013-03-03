@@ -41,6 +41,7 @@
     <ClCompile Include="..\Code\TextureLoader.cpp" />
     <ClCompile Include="..\Code\Tree.cpp" />
     <ClCompile Include="..\Code\TreeSegment.cpp" />
+    <ClCompile Include="..\Code\TreeShader.cpp" />
     <ClCompile Include="..\Code\VerticalBlurShader.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -76,6 +77,7 @@
     <ClInclude Include="..\Code\TgaHeader.h" />
     <ClInclude Include="..\Code\Tree.h" />
     <ClInclude Include="..\Code\TreeSegment.h" />
+    <ClInclude Include="..\Code\TreeShader.h" />
     <ClInclude Include="..\Code\Vertex.h" />
     <ClInclude Include="..\Code\VerticalBlurShader.h" />
   </ItemGroup>
@@ -90,6 +92,7 @@
     <None Include="Shaders\orthotexture.fx" />
     <None Include="Shaders\simpletexture.fx" />
     <None Include="Shaders\texture.fx" />
+    <None Include="Shaders\treemagic.fx" />
     <None Include="Shaders\verticalblur.fx" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

@@ -26,12 +26,12 @@ int TreeSegment::GetGrowthCount(){
 	return mGrowthCount;
 }
 
-CylinderObject *TreeSegment::GetGameObject(){
-	return &mObject;
-}
-
 TreeSegment	*TreeSegment::GetParent(){
 	return mParentSegment;
+}
+
+float TreeSegment::GetRadius(){
+	return mRadius;
 }
 
 void TreeSegment::GetPosition(Vector3f &pos){
@@ -45,22 +45,18 @@ void TreeSegment::GetGrowthDirection(Vector3f &growthDir){
 
 void TreeSegment::IncrementRadius(float amount){
 	mRadius += amount;
-	mObject.SetRadius(mRadius);
 }
 
 void TreeSegment::SetRadius(float radius){
 	mRadius = radius;
-	mObject.SetRadius(mRadius);
 }
 
 void TreeSegment::SetPosition(Vector3f position){
 	mPosition = position;
-	mObject.pos = position;
 }
 
 void TreeSegment::SetHeight(float height){
 	mHeight = height;
-	mObject.SetHeight(height);
 }
 
 void TreeSegment::SetParent(TreeSegment *parentSegment){

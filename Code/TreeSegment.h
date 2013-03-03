@@ -3,8 +3,8 @@ TreeSegment Class: Used to handle generation of the tree for
 space exploration
 
 Author: Valentin Hinov
-Date: 21/02/2013
-Version: 1.0
+Date: 03/03/2013
+Version: 1.1
 
 Exposes: TreeSegment
 **************************************************************/
@@ -13,8 +13,6 @@ Exposes: TreeSegment
 #define _H_TREESEGMENT_H
 
 #include "Vertex.h"
-
-#include "CylinderObject.h"
 
 //TreeSegment class 
 class TreeSegment{
@@ -33,7 +31,7 @@ public:
 	void			IncrementRadius(float amount);
 
 	int				GetGrowthCount();
-	CylinderObject	*GetGameObject();
+	float			GetRadius();
 	TreeSegment		*GetParent();
 	void			GetPosition(Vector3f &pos);
 	void			GetGrowthDirection(Vector3f &growthDir);
@@ -46,7 +44,6 @@ private:
 	float			mHeight;
 
 	TreeSegment		*mParentSegment;
-	CylinderObject	mObject;
 };
 
 

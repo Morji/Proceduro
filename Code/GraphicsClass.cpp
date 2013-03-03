@@ -97,6 +97,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, HIN
 	InitTerrain(hwnd);
 	InitShaders(hwnd);
 	InitCameras();
+	InitMisc(hwnd);
 
 	// Create the render to texture object.
 	m_RenderTexture = new RenderTexture;
@@ -271,19 +272,16 @@ void GraphicsClass::InitTerrain(HWND hwnd){
 		MessageBox(hwnd, L"Could properly generate mTerrain.", L"Error", MB_OK);
 	}
 	delete generator;
-	generator = nullptr;
-
-	Vector3f mTreePos = mTerrain->GetRandomPoint();
-	mTree = new Tree(mD3D->GetDevice(),hwnd,mTreePos);
-	result = mTree->GenerateTreeSpaceExploration(0.7f,0.0008f,3.0f,5.5f,30.0f);
-	if(!result){
-		MessageBox(hwnd, L"Could not initialize mTree object.", L"Error", MB_OK);
-	}
-	
+	generator = nullptr;	
 }
 
 void GraphicsClass::InitMisc(HWND hwnd){
-	
+	Vector3f mTreePos = mTerrain->GetRandomPoint();
+	mTree = new Tree(mD3D->GetDevice(),hwnd,mTreePos);
+	bool result = mTree->GenerateTreeSpaceExploration(0.55f,0.0009f,45.0f);
+	if(!result){
+		MessageBox(hwnd, L"Could not initialize mTree object.", L"Error", MB_OK);
+	}
 }
 
 void GraphicsClass::Shutdown()
@@ -630,8 +628,6 @@ bool GraphicsClass::RenderScene(){
 	D3DXVECTOR3 camPos;
 	mCamera->GetPosition(camPos);
 
-	mTree->Render(mWorldMatrix,mViewMatrix,mProjectionMatrix, camPos,mLight,0);
-
 	mTerrain->Render(mWorldMatrix);
 	mMultiTexShader->Render(mD3D->GetDevice(),mTerrain->GetIndexCount(),mTerrain->objMatrix,mViewMatrix,mProjectionMatrix,camPos,mLight,
 																															 NULL,
@@ -640,7 +636,7 @@ bool GraphicsClass::RenderScene(){
 																															 mTerrain->GetDiffuseMap(1),
 																															 mTerrain->GetDiffuseMap(2),
 																															 mTerrain->GetMaxHeight());
-
+	mTree->Render(mWorldMatrix,mViewMatrix,mProjectionMatrix, camPos,mLight,0);
 	return true;
 }
 
@@ -676,6 +672,9 @@ void GraphicsClass::Update(float dt){
 	}
 	if (mInput->IsRightPressed()){
 		mTerrain->AnimateTerrain(dt);
+	}
+	if (mInput->IsPgDownPressed()){
+		mD3D->Screenshot();
 	}
 }
 

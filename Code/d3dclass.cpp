@@ -743,6 +743,40 @@ void D3DClass::ResetViewport(){
 	return;
 }
 
+bool D3DClass::Screenshot(){
+	HRESULT hr;
+	ID3D10Resource *backbufferRes;
+	m_renderTargetView->GetResource(&backbufferRes);
+	
+	D3D10_TEXTURE2D_DESC texDesc;
+	texDesc.ArraySize = 1;
+	texDesc.BindFlags = 0;
+	texDesc.CPUAccessFlags = 0;
+	texDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	texDesc.Width = 800;  // must be same as backbuffer
+	texDesc.Height = 600; // must be same as backbuffer
+	texDesc.MipLevels = 1;
+	texDesc.MiscFlags = 0;
+	texDesc.SampleDesc.Count = 1;
+	texDesc.SampleDesc.Quality = 0;
+	texDesc.Usage = D3D10_USAGE_DEFAULT;
+	
+	ID3D10Texture2D *texture;
+	hr =  m_device->CreateTexture2D(&texDesc, 0, &texture);
+	if (FAILED(hr)){
+		return false;
+	}
+	m_device->CopyResource(texture, backbufferRes);
+	
+	hr = D3DX10SaveTextureToFile(texture, D3DX10_IFF_PNG, L"ProceduroScreenshot.png");
+	if (FAILED(hr)){
+		return false;
+	}
+	texture->Release();
+	backbufferRes->Release();
+	return true;
+}
+
 
 ID3D10Device* D3DClass::GetDevice()
 {

@@ -165,6 +165,9 @@
     <ClCompile Include="..\Code\FontShader.cpp">
       <Filter>Source Files\Shaders</Filter>
     </ClCompile>
+    <ClCompile Include="..\Code\TreeShader.cpp">
+      <Filter>Source Files\Shaders</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Code\GameObject.h">
@@ -269,6 +272,9 @@
     <ClInclude Include="..\Code\FontShader.h">
       <Filter>Header Files\Shaders</Filter>
     </ClInclude>
+    <ClInclude Include="..\Code\TreeShader.h">
+      <Filter>Header Files\Shaders</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\color2.fx">
@@ -302,6 +308,9 @@
       <Filter>EffectFiles</Filter>
     </None>
     <None Include="Shaders\orthotexture.fx">
+      <Filter>EffectFiles</Filter>
+    </None>
+    <None Include="Shaders\treemagic.fx">
       <Filter>EffectFiles</Filter>
     </None>
   </ItemGroup>

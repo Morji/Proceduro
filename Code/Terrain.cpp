@@ -339,5 +339,5 @@ Vector3f Terrain::GetRandomPoint(){
 
 	float y = GetHeight(x,z);
 
-	return Vector3f(x,y,z);
+	return Vector3f(x,y,z) + pos;
 }

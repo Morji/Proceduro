@@ -46,6 +46,8 @@ public:
 
 	void GetVideoCardInfo(char*, int&);
 
+	bool Screenshot();
+
 private:
 	bool BuildRasterizers();
 	bool BuildBlendStates();
