@@ -15,10 +15,16 @@ Supported methods: Space Exploration
 
 #include <vector>
 
+#include "ValMath.h"
 #include "CylinderObject.h"
 #include "TexShader.h"
 #include "TreeShader.h"
 #include "TreeSegment.h"
+
+#define MAX_LOD		10
+#define MIN_LOD		4
+#define MAX_DIST    180
+#define MIN_DIST	50
 
 class Tree{
 public:
@@ -49,8 +55,7 @@ private:
 	std::vector<TreeSegment*>	treeSegmentList;
 
 private:
-	TexShader		*treeShader;
-	TreeShader		*newTreeShader;
+	TreeShader		*mTreeShader;
 
 	ID3D10Buffer	*mVB;
 	ID3D10Buffer	*mIB;

@@ -334,10 +334,14 @@ float Terrain::GetHeight(float x, float z){
 }
 
 Vector3f Terrain::GetRandomPoint(){
-	float x = RandF(-gridWidth/2,gridWidth/2);
-	float z = RandF(-gridDepth/2,gridDepth/2);
+	float dx = CELLSPACING;
+	float halfWidth = (gridWidth-1)*dx*0.5f;
+	float halfDepth = (gridDepth-1)*dx*0.5f;
 
-	float y = GetHeight(x,z);
+	float z = halfDepth - RandF(0,gridWidth)*dx;		
+	float x = -halfWidth + RandF(0,gridDepth)*dx;
 
-	return Vector3f(x,y,z) + pos;
+	float y = GetHeight(x,z);	
+
+	return Vector3f(x,y,z);
 }

@@ -3,18 +3,14 @@
 Tree::Tree(ID3D10Device *d3dDevice, HWND hwnd, Vector3f position){
 	md3dDevice = d3dDevice;
 	mTreePosition = position;
-	treeShader = new TexShader();
-	if (!treeShader->Initialize(md3dDevice,hwnd)){
-		MessageBox(hwnd, L"Error while creating tree shader", L"Error", MB_OK);
-	}
 
-	newTreeShader = new TreeShader();
-	if (!newTreeShader->Initialize(md3dDevice,hwnd)){
+	mTreeShader = new TreeShader();
+	if (!mTreeShader->Initialize(md3dDevice,hwnd)){
 		MessageBox(hwnd, L"Error while creating new tree shader", L"Error", MB_OK);
 	}
 
 	treeTexture = new TextureLoader();
-	treeTexture->Initialize(md3dDevice,L"assets/textures/tree_texture.jpg");
+	treeTexture->Initialize(md3dDevice,L"assets/textures/tree_bark.jpg");
 
 	mVB = 0;
 	mIB = 0;
@@ -36,13 +32,9 @@ Tree::~Tree(void){
 		treeSegmentList.pop_back();
 	}
 	treeSegmentList.clear();
-	if (treeShader){
-		delete treeShader;
-		treeShader = nullptr;
-	}
-	if (newTreeShader){
-		delete newTreeShader;
-		newTreeShader = nullptr;
+	if (mTreeShader){
+		delete mTreeShader;
+		mTreeShader = nullptr;
 	}
 	if (treeTexture){
 		treeTexture->Shutdown();
@@ -117,13 +109,18 @@ void Tree::Render(D3DXMATRIX worldMatrix,D3DXMATRIX viewMatrix,D3DXMATRIX projec
 	mObjMatrix *= m;
 	mObjMatrix *= worldMatrix;
 
+	//calculate LOD level
+	float distanceToTree = D3DXVec3Length(&(eyePos - mTreePosition));
+	distanceToTree = min(distanceToTree,MAX_DIST);
+	int lod = map(distanceToTree,MIN_DIST,MAX_DIST,MAX_LOD,MIN_LOD);
+
 	RenderTreeBuffers();
-	newTreeShader->Render(md3dDevice,mIndexCount,mObjMatrix,viewMatrix,projectionMatrix,eyePos,light,lightType);
-
-
+	mTreeShader->Render(md3dDevice,mIndexCount,mObjMatrix,viewMatrix,projectionMatrix,eyePos, treeTexture->GetTexture(), lod, light,lightType);
 }
 
 bool Tree::GenerateTreeSpaceExploration(float minGrowthSize, float startRadius, float maxHeight){
+
+	mTreeShader->SetMaxHeight(maxHeight);
 
 	const int targetPosSize = 800;
 	const float sphereScale = maxHeight*0.5f;
@@ -227,10 +224,7 @@ bool Tree::GenerateTreeSpaceExploration(float minGrowthSize, float startRadius, 
 
 				//increment the growth of all parents
 				TreeSegment *parent = treeSegment;
-				while (parent){
-					parent->IncrementRadius(startRadius);
-					parent = parent->GetParent();
-				}
+				parent->IncrementRadius(startRadius);				
 
 				//reset growth of old segment
 				treeSegment->ResetGrowth();
@@ -243,6 +237,16 @@ bool Tree::GenerateTreeSpaceExploration(float minGrowthSize, float startRadius, 
 		growthTargetHolder.pop_back();
 	}
 	growthTargetHolder.clear();
+
+	//postprocess tree here
+	int minChildCountToRemain = 3;
+	for (int i = 0; i < treeSegmentList.size(); i++){
+		TreeSegment *segment = treeSegmentList[i];
+		if (segment->GetChildCount() < minChildCountToRemain){
+			treeSegmentList.erase(treeSegmentList.begin() + i);
+			i--;
+		}
+	}
 
 	mVertexCount = mIndexCount = treeSegmentList.size();
 
@@ -265,12 +269,16 @@ bool Tree::GenerateTreeSpaceExploration(float minGrowthSize, float startRadius, 
 	for (int i = 0; i < mIndexCount; i++){
 		indices[i] = i;
 	}
-
 	
 	if (!InitializeBuffers(indices,vertices)){
 		return false;
 	}
 
+	delete [] indices;
+	indices = nullptr;
+
+	delete [] vertices;
+	vertices = nullptr;
 
 	return true;
 }

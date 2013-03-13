@@ -1,10 +1,10 @@
 /*************************************************************
-TreeShader Class: Used to draw and create a tree shape object
-on the GPU
+TreeShader Class: Used to draw and create a textured
+tree shape object on the GPU.
 
 Author: Valentin Hinov
-Date: 28/02/2013
-Version: 1.0
+Date: 11/03/2013
+Version: 1.1
 
 Exposes: TreeShader
 **************************************************************/
@@ -35,16 +35,21 @@ public:
 
 	bool Initialize(ID3D10Device*, HWND);
 	void Render(ID3D10Device* device, int indexCount, D3DXMATRIX worldMatrix, D3DXMATRIX viewMatrix, D3DXMATRIX projectionMatrix, 
-				D3DXVECTOR3 mEyePos, Light lightVar, int lightType);
+				D3DXVECTOR3 mEyePos, ID3D10ShaderResourceView *texture, int LOD, Light lightVar, int lightType);
+
+	// Set the max height of tree - this controls how to properly tile the texture on it
+	void SetMaxHeight(float maxHeight);
 
 private:
 	bool InitializeShader(ID3D10Device*, HWND, WCHAR*);
 
 	void SetShaderParameters(D3DXMATRIX worldMatrix, D3DXMATRIX viewMatrix, D3DXMATRIX projectionMatrix, 
-				D3DXVECTOR3 mEyePos, Light lightVar, int lightType);
+				D3DXVECTOR3 mEyePos, ID3D10ShaderResourceView *texture, int LOD, Light lightVar, int lightType);
 
 private:	
-
+	ID3D10EffectShaderResourceVariable	*mTexture;
+	ID3D10EffectScalarVariable			*mLOD;
+	ID3D10EffectScalarVariable			*mMaxHeight;
 };
 
 #endif

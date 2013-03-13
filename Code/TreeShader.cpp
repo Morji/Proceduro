@@ -9,6 +9,9 @@ TreeShader::TreeShader()
 	mWorldMatrix		= 0;
 	mViewMatrix			= 0;
 	mProjectionMatrix	= 0;
+	mTexture			= 0;
+	mLOD				= 0;
+	mMaxHeight			= 0;
 }
 
 
@@ -22,6 +25,9 @@ TreeShader::~TreeShader()
 	mWorldMatrix		= 0;
 	mViewMatrix			= 0;
 	mProjectionMatrix	= 0;
+	mTexture			= 0;
+	mLOD				= 0;
+	mMaxHeight			= 0;
 }
 
 
@@ -40,12 +46,16 @@ bool TreeShader::Initialize(ID3D10Device* device, HWND hwnd)
 	return true;
 }
 
+void TreeShader::SetMaxHeight(float maxHeight){
+	mMaxHeight->SetFloat(maxHeight);
+}
+
 
 void TreeShader::Render(ID3D10Device* device, int indexCount, D3DXMATRIX worldMatrix, D3DXMATRIX viewMatrix, D3DXMATRIX projectionMatrix, 
-				D3DXVECTOR3 mEyePos, Light lightVar, int lightType)
+				D3DXVECTOR3 mEyePos, ID3D10ShaderResourceView *texture, int LOD, Light lightVar, int lightType)
 {
 	// Set the shader parameters that it will use for rendering.
-	SetShaderParameters(worldMatrix, viewMatrix, projectionMatrix, mEyePos, lightVar, lightType);
+	SetShaderParameters(worldMatrix, viewMatrix, projectionMatrix, mEyePos, texture, LOD, lightVar, lightType);
 
 	// Now render the prepared buffers with the shader.
 	RenderShader(device, indexCount);
@@ -143,13 +153,17 @@ bool TreeShader::InitializeShader(ID3D10Device* device, HWND hwnd, WCHAR* filena
 
 	mLightVar		= mEffect->GetVariableByName("gLight");
 	mLightType		= mEffect->GetVariableByName("gLightType")->AsScalar();
+	mLOD			= mEffect->GetVariableByName("gLOD")->AsScalar();
+	mMaxHeight		= mEffect->GetVariableByName("gMaxHeight")->AsScalar();
+
+	mTexture		= mEffect->GetVariableByName("gTexture")->AsShaderResource();
 
 	return true;
 }
 
 
 void TreeShader::SetShaderParameters(D3DXMATRIX worldMatrix, D3DXMATRIX viewMatrix, D3DXMATRIX projectionMatrix, 
-				D3DXVECTOR3 mEyePos, Light lightVar, int lightType)
+				D3DXVECTOR3 mEyePos, ID3D10ShaderResourceView *texture, int LOD, Light lightVar, int lightType)
 {
 	LightShader::SetShaderParameters(worldMatrix,viewMatrix,projectionMatrix,mEyePos,lightVar,lightType);
 
@@ -161,6 +175,12 @@ void TreeShader::SetShaderParameters(D3DXMATRIX worldMatrix, D3DXMATRIX viewMatr
 
 	// Set the light type inside the shader
 	mLightType->SetInt(lightType);
+
+	// Set the LOD var
+	mLOD->SetInt(LOD);
+
+	// Set the texture  var
+	mTexture->SetResource(texture);
 
 	return;
 }

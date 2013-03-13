@@ -278,7 +278,7 @@ void GraphicsClass::InitTerrain(HWND hwnd){
 void GraphicsClass::InitMisc(HWND hwnd){
 	Vector3f mTreePos = mTerrain->GetRandomPoint();
 	mTree = new Tree(mD3D->GetDevice(),hwnd,mTreePos);
-	bool result = mTree->GenerateTreeSpaceExploration(0.55f,0.0009f,45.0f);
+	bool result = mTree->GenerateTreeSpaceExploration(0.55f,0.0009f,40.0f);
 	if(!result){
 		MessageBox(hwnd, L"Could not initialize mTree object.", L"Error", MB_OK);
 	}

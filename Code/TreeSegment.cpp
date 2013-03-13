@@ -5,11 +5,19 @@ TreeSegment::TreeSegment(){
 	mGrowthCount = 0;
 	mRadius = 1.0f;
 	mHeight = 1.0f;
+	mChildCount = 0;
 	mGrowthDirection = Vector3f(0,0,0);
 }
 
 TreeSegment::~TreeSegment(){
 	mParentSegment = nullptr;
+}
+
+void TreeSegment::AddChildCount(){
+	mChildCount++;
+	if (mParentSegment){
+		mParentSegment->AddChildCount();
+	}
 }
 
 void TreeSegment::IncrementGrowthDir(Vector3f growthDir){
@@ -24,6 +32,10 @@ void TreeSegment::ResetGrowth(){
 
 int TreeSegment::GetGrowthCount(){
 	return mGrowthCount;
+}
+
+int TreeSegment::GetChildCount(){
+	return mChildCount;
 }
 
 TreeSegment	*TreeSegment::GetParent(){
@@ -45,6 +57,9 @@ void TreeSegment::GetGrowthDirection(Vector3f &growthDir){
 
 void TreeSegment::IncrementRadius(float amount){
 	mRadius += amount;
+	if (mParentSegment){
+		mParentSegment->IncrementRadius(amount);
+	}
 }
 
 void TreeSegment::SetRadius(float radius){
@@ -61,4 +76,5 @@ void TreeSegment::SetHeight(float height){
 
 void TreeSegment::SetParent(TreeSegment *parentSegment){
 	mParentSegment = parentSegment;
+	mParentSegment->AddChildCount();
 }

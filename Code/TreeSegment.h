@@ -28,13 +28,18 @@ public:
 	void			SetParent(TreeSegment *parentSegment);
 	void			SetHeight(float height);
 	void			SetRadius(float radius);
+	
 	void			IncrementRadius(float amount);
 
 	int				GetGrowthCount();
+	int				GetChildCount();
 	float			GetRadius();
 	TreeSegment		*GetParent();
 	void			GetPosition(Vector3f &pos);
 	void			GetGrowthDirection(Vector3f &growthDir);
+
+private:
+	void			AddChildCount();
 
 private:
 	Vector3f		mPosition;
@@ -43,6 +48,7 @@ private:
 	float			mRadius;
 	float			mHeight;
 
+	int				mChildCount;
 	TreeSegment		*mParentSegment;
 };
 
