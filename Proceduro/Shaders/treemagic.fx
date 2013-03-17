@@ -79,6 +79,7 @@ const static float PI = 3.14159265f;
 void TreeGeometryShader(point GeometryInputType input[1],inout TriangleStream<PixelInputType> triStream)
 {	
 	PixelInputType output;
+	
 	float rDeltaSegAngle = (2.0f * PI / gLOD);
 	float rSegmentLength = 1.0f / (float)gLOD;
 

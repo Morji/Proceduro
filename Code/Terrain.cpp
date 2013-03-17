@@ -9,13 +9,20 @@ Terrain::Terrain(void)
 	indices = nullptr;
 	texOffset = Vector2f(0,0);
 	animCoeff = 0.0f;
+	mTerrainShader = 0;
+	specularMap = 0;
+	mVB = 0;
+	mIB = 0;
+	offset = stride = 0;
+	for (int i = 0; i < 3; i++)
+		diffuseMapRV[i] = 0;
+
 
 }
 
 
 Terrain::~Terrain(void)
 {
-	Shutdown();
 	if (vertices){
 		delete [] vertices;
 		vertices = nullptr;		
@@ -28,6 +35,88 @@ Terrain::~Terrain(void)
 		delete [] heightData;
 		heightData = nullptr;
 	}
+
+	if (mTerrainShader){
+		delete mTerrainShader;
+		mTerrainShader = nullptr;
+	}
+
+	if (specularMap){
+		specularMap->Shutdown();
+		delete specularMap;
+		specularMap = nullptr;
+	}
+	for (int i = 0; i < 3; i++){
+		if (diffuseMapRV[i]){
+			diffuseMapRV[i]->Shutdown();
+			delete diffuseMapRV[i];
+			diffuseMapRV[i] = nullptr;
+		}
+	}
+	md3dDevice = nullptr;
+	// Release the index buffer.
+	ReleaseCOM(mIB);
+	// Release the vertex buffer.
+	ReleaseCOM(mVB);
+}
+
+bool Terrain::Initialize(ID3D10Device* device, HWND hwnd){
+	md3dDevice = device;
+
+	mTerrainShader = new TerrainHeightShader();
+	if (!mTerrainShader->Initialize(md3dDevice,hwnd)){
+		MessageBox(hwnd, L"Error while creating terrain shader", L"Error", MB_OK);
+		return false;
+	}
+	specularMap = new TextureLoader();
+	if (!specularMap->Initialize(md3dDevice,L"assets/textures/defaultspec.dds")){
+		MessageBox(hwnd, L"Error while creating terrain textures", L"Error", MB_OK);
+		return false;
+	}
+	for (int i = 0; i < 3; i++){
+		diffuseMapRV[i] = new TextureLoader();
+		WCHAR *texFile = 0;
+		if (i == 0)
+			texFile = L"assets/textures/stone2.dds";
+		else if (i == 1)
+			texFile = L"assets/textures/ground0.dds";
+		else if (i == 2)
+			texFile = L"assets/textures/grass0.dds";
+		if (!diffuseMapRV[i]->Initialize(md3dDevice,texFile)){
+			MessageBox(hwnd, L"Error while creating terrain textures", L"Error", MB_OK);
+			return false;
+		}
+		texFile = 0;
+	}
+	return true;
+}
+
+void Terrain::RenderBuffers(){
+	// Set vertex buffer stride and offset.
+	offset = 0;
+	// Set the vertex buffer to active in the input assembler so it can be rendered.
+	md3dDevice->IASetVertexBuffers(0, 1, &mVB, &stride, &offset);
+
+	// Set the index buffer to active in the input assembler so it can be rendered.
+	md3dDevice->IASetIndexBuffer(mIB, DXGI_FORMAT_R32_UINT, 0);
+
+	// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
+	md3dDevice->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+}
+
+void Terrain::Render(D3DXMATRIX worldMatrix,D3DXMATRIX viewMatrix,D3DXMATRIX projectionMatrix, Vector3f eyePos, Light light, int lightType){
+	D3DXMATRIX mObjMatrix;
+	mTransform->GetTransformMatrix(mObjMatrix);
+	mObjMatrix*=worldMatrix;
+	RenderBuffers();
+	mTerrainShader->Render(md3dDevice,mIndexCount,mObjMatrix,viewMatrix,projectionMatrix,
+							eyePos,
+							light,
+							diffuseMapRV[0]->GetTexture(),
+							diffuseMapRV[1]->GetTexture(),
+							diffuseMapRV[2]->GetTexture(),
+							maxHeight,
+							lightType);
 }
 
 bool Terrain::CreateTerrain(TerrainGenerator *generator){
@@ -282,7 +371,7 @@ void Terrain::AnimateUV(float dt){
 	D3DXMATRIX T;
 	D3DXMatrixTranslation(&T, texOffset.x, texOffset.y, 0.0f);
 	// Scale and translate the texture.
-	mTexMatrix = S*T;
+	//mTexMatrix = S*T;
 }
 
 float Terrain::GetMaxHeight(){

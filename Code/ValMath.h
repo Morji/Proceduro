@@ -5,14 +5,21 @@ Author: Valentin Hinov
 Date: 07/03/2013
 Version: 1.0
 
-Exposes: map function
+Exposes: map function, clamp function
 **************************************************************/
 
 #ifndef _H_VALMATH_H
 #define _H_VALMATH_H
 
-inline long map(long x, long in_min, long in_max, long out_min, long out_max){
+#include <Windows.h>
+
+template <typename T, typename U> 
+inline T map(T  x, T in_min, T in_max, U out_min, U out_max){
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
+inline long clamp(long x, long minVal, long maxVal){
+  return min(max(x,minVal),maxVal);
 }
 
 #endif

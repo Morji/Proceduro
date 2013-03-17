@@ -1,4 +1,3 @@
-////////////////////////////////////////////////////////////////////////////////
 // Filename: graphicsclass.cpp
 ////////////////////////////////////////////////////////////////////////////////
 #include "GraphicsClass.h"
@@ -9,13 +8,11 @@ GraphicsClass::GraphicsClass(){
 	mD3D = 0;
 	mTerrain = 0;
 	mCamera = 0;
-	mMultiTexShader = 0;
 	mInput = 0;
 	mCpu = 0;
 	mText = 0;
-	mRegularTexShader = 0;
-	mTree = 0;	
 	mOrthoTexShader = 0;
+	mFrustum	= 0;
 
 	mHorizontalBlurShader = 0;
 	mVerticalBlurShader = 0;
@@ -209,11 +206,6 @@ void GraphicsClass::InitCameras(){
 }
 
 void GraphicsClass::InitShaders(HWND hwnd){
-	mMultiTexShader = new MultiTextureShader();
-	shaderCollection.push_back(mMultiTexShader);
-
-	mRegularTexShader = new TexShader();
-	shaderCollection.push_back(mRegularTexShader);
 
 	mOrthoTexShader = new OrthoTextureShader();
 	shaderCollection.push_back(mOrthoTexShader);
@@ -260,9 +252,7 @@ void GraphicsClass::InitTerrain(HWND hwnd){
 	
 	//create mTerrain
 	mTerrain = new Terrain;
-	result = mTerrain->InitializeWithMultiTexture(mD3D->GetDevice(),L"assets/textures/defaultspec.dds", NULL,L"assets/textures/stone2.dds",
-																						 L"assets/textures/ground0.dds",
-																						 L"assets/textures/grass0.dds");
+	result = mTerrain->Initialize(mD3D->GetDevice(),hwnd);
 	if(!result){
 		MessageBox(hwnd, L"Could not initialize the mTerrain object.", L"Error", MB_OK);
 	}
@@ -276,11 +266,29 @@ void GraphicsClass::InitTerrain(HWND hwnd){
 }
 
 void GraphicsClass::InitMisc(HWND hwnd){
-	Vector3f mTreePos = mTerrain->GetRandomPoint();
-	mTree = new Tree(mD3D->GetDevice(),hwnd,mTreePos);
-	bool result = mTree->GenerateTreeSpaceExploration(0.55f,0.0009f,40.0f);
-	if(!result){
-		MessageBox(hwnd, L"Could not initialize mTree object.", L"Error", MB_OK);
+	//Generate some trees
+	for (int i = 0; i < 5; i++){
+		Vector3f mTreePos = mTerrain->GetRandomPoint();
+		Tree *tree = new Tree(mTreePos);
+		bool result = tree->Initialize(mD3D->GetDevice(),hwnd);
+		if(!result){
+			MessageBox(hwnd, L"Could not initialize mTree object.", L"Error", MB_OK);
+		}
+		float minGrowthSize = RandF(0.7f,0.9f);
+		float startRadius = RandF(0.0007f,0.001f);
+		float maxHeight = RandF(25.0f,45.0f);
+		result = tree->GenerateTreeSpaceExploration(minGrowthSize,startRadius,maxHeight);
+		if(!result){
+			MessageBox(hwnd, L"Could not initialize mTree object.", L"Error", MB_OK);
+		}
+		
+		mTreeCollection.push_back(tree);
+	}
+
+	//Init frustum
+	mFrustum = new Frustum();
+	if (!mFrustum){
+		MessageBox(hwnd, L"Could not initialize mFrustum object.", L"Error", MB_OK);
 	}
 }
 
@@ -293,19 +301,18 @@ void GraphicsClass::Shutdown()
 		mD3D = nullptr;
 	}
 
-	if (mTree){
-		delete mTree;
-		mTree = nullptr;
-	}
-
 	if (mInput){
 		mInput->Shutdown();
 		delete mInput;
 		mInput = nullptr;
 	}
 
+	if (mFrustum){
+		delete mFrustum;
+		mFrustum = nullptr;
+	}
+
 	if (mTerrain){
-		mTerrain->Shutdown();
 		delete mTerrain;
 		mTerrain = nullptr;
 	}
@@ -313,6 +320,16 @@ void GraphicsClass::Shutdown()
 	if (mCamera){
 		delete mCamera;
 		mCamera = nullptr;
+	}
+
+	//clean-up trees
+	while (!mTreeCollection.empty()){
+		Tree *tree = mTreeCollection.back();
+		if (tree){
+			delete tree;
+			tree = nullptr;
+		}
+		mTreeCollection.pop_back();
 	}
 
 	//clean-up shaders
@@ -628,15 +645,28 @@ bool GraphicsClass::RenderScene(){
 	D3DXVECTOR3 camPos;
 	mCamera->GetPosition(camPos);
 
-	mTerrain->Render(mWorldMatrix);
-	mMultiTexShader->Render(mD3D->GetDevice(),mTerrain->GetIndexCount(),mTerrain->objMatrix,mViewMatrix,mProjectionMatrix,camPos,mLight,
-																															 NULL,
-																															 NULL,
-																															 mTerrain->GetDiffuseMap(0),
-																															 mTerrain->GetDiffuseMap(1),
-																															 mTerrain->GetDiffuseMap(2),
-																															 mTerrain->GetMaxHeight());
-	mTree->Render(mWorldMatrix,mViewMatrix,mProjectionMatrix, camPos,mLight,0);
+	// Construct the frustum.
+	mFrustum->ConstructFrustum(SCREEN_DEPTH, mProjectionMatrix, mViewMatrix);
+	int renderCount = 0;
+
+	mTerrain->Render(mWorldMatrix,mViewMatrix,mProjectionMatrix, camPos,mLight,0);
+	
+	for (int i = 0; i < mTreeCollection.size(); i++){
+		//check if all objects lie within the frustum
+		BoundingBox *objectBox = mTreeCollection[i]->GetBoundingBox();
+		if (objectBox){
+			if (mFrustum->CheckBoundingBox(objectBox)){
+				renderCount++;
+				mTreeCollection[i]->Render(mWorldMatrix,mViewMatrix,mProjectionMatrix, camPos,mLight,0);
+			}
+		}
+		else{
+			mTreeCollection[i]->Render(mWorldMatrix,mViewMatrix,mProjectionMatrix, camPos,mLight,0);
+		}
+	}
+	if (!mText->SetRenderCount(renderCount)){
+		return false;
+	}
 	return true;
 }
 

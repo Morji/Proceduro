@@ -17,19 +17,22 @@ Supported methods:
 #ifndef _TERRAIN_H
 #define _TERRAIN_H
 
-#include "GameObject.h"
+#include "BaseGameObject.h"
+#include "TerrainHeightShader.h"
 #include "d3dUtil.h"
+#include "TextureLoader.h"
 #include "TerrainGenerator.h"
 
 #define CELLSPACING		1.0f
 #define	HEIGHT_FACTOR	0.2f;
 
-class Terrain : public GameObject
+class Terrain : public BaseGameObject
 {
 public:
 	Terrain(void);
 	~Terrain(void);
 
+	bool		Initialize(ID3D10Device* device, HWND hwnd);
 	bool		CreateTerrain(TerrainGenerator *generator);
 
 	float		GetMaxHeight();
@@ -41,16 +44,31 @@ public:
 	void		AnimateUV(float dt);
 	void		AnimateTerrain(float dt);
 
+	void		Render(D3DXMATRIX worldMatrix,D3DXMATRIX viewMatrix,D3DXMATRIX projectionMatrix, Vector3f eyePos, Light light, int lightType);
+
 private:
 
 	bool InitializeBuffers(DWORD* indices,  VertexNT* vertices);
-
+	void RenderBuffers();
 	void  ComputeIndices();
 	void  ComputeNormals()const;				// computes the normals of the terrain on a per-vertex level
 	void  ComputeTextureCoords(const int repeatAmount = 1)const;		// computes the texture coordinates of the terrain
 
 	void  ResetData();
 
+	TextureLoader	*specularMap;
+	TextureLoader	*diffuseMapRV[3];
+
+	TerrainHeightShader	*mTerrainShader;
+	ID3D10Device		*md3dDevice;
+
+	DWORD				mVertexCount;
+	DWORD				mIndexCount;
+	ID3D10Buffer		*mVB;
+	ID3D10Buffer		*mIB;
+
+	unsigned int		stride;
+	unsigned int		offset;
 private:	
 	float			animCoeff;
 	DWORD			*indices;

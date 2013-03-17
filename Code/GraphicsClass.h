@@ -19,7 +19,6 @@
 #include "cpuclass.h"
 #include "textclass.h"
 #include "TexShader.h"
-#include "MultiTextureShader.h"
 #include "GameTimer.h"
 #include "Tree.h"
 #include "OrthoWindow.h"
@@ -27,6 +26,8 @@
 #include "VerticalBlurShader.h"
 #include "RenderTexture.h"
 #include "OrthoTextureShader.h"
+#include "Frustum.h"
+#include "BoundingBox.h"
 
 using namespace std;
 
@@ -83,14 +84,10 @@ private:
 	GameTimer		mTimer;
 	Light			mLight;
 
-	Tree			*mTree;
-
 	Terrain			*mTerrain;
 
 	GameCamera		*mCamera;
 
-	MultiTextureShader		*mMultiTexShader;
-	TexShader				*mRegularTexShader;
 	OrthoTextureShader		*mOrthoTexShader;
 	HorizontalBlurShader	*mHorizontalBlurShader;
 	VerticalBlurShader		*mVerticalBlurShader;
@@ -100,9 +97,11 @@ private:
 
 	D3DXMATRIX mViewMatrix, mProjectionMatrix, mWorldMatrix, mOrthoMatrix;
 
+	Frustum					*mFrustum;
 private:
 	//collections 
 	vector<IShader*>	shaderCollection;
+	vector<Tree*>		mTreeCollection;
 };
 
 #endif

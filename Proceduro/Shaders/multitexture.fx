@@ -12,18 +12,13 @@ cbuffer cbPerFrame{
 	float3	gEyePosW;
 };
 
-bool gSpecularEnabled;
-
 cbuffer cbPerObject{
 	float4x4	worldMatrix;
 	float4x4	viewMatrix;
 	float4x4	projectionMatrix;
-	float4x4	texMtx;
 	
 };
 // Nonnumeric values cannot be added to a cbuffer.
-Texture2D	gSpecMap;
-Texture2D	gBlendMap;
 Texture2D	gLayer1;
 Texture2D	gLayer2;
 Texture2D	gLayer3;
@@ -86,10 +81,7 @@ float4 TexturePixelShaderHeight(PixelInputType input) : SV_Target
 	// Interpolating normal can make it not be of unit length so normalize it.
     float3 normalW = normalize(input.normal);
 
-	float4 spec = gSpecMap.Sample( SampleType, input.tiledUV );
-			
-	// Map [0,1] --> [0,256]
-	spec.a *= 256.0f;
+	float4 spec = float4(0,0,0,0);
 
 	// Get materials from texture maps for diffuse col.		
 	float4 c1 = gLayer1.Sample( SampleType, input.tiledUV );
@@ -134,7 +126,7 @@ float4 TexturePixelShaderHeight(PixelInputType input) : SV_Target
 ////////////////////////////////////////////////////////////////////////////////
 // Pixel Shader for texturing based on blend map
 ////////////////////////////////////////////////////////////////////////////////
-float4 TexturePixelShaderBlendMap(PixelInputType input) : SV_Target
+/*float4 TexturePixelShaderBlendMap(PixelInputType input) : SV_Target
 {
 	// Interpolating normal can make it not be of unit length so normalize it.
     float3 normalW = normalize(input.normal);
@@ -167,9 +159,7 @@ float4 TexturePixelShaderBlendMap(PixelInputType input) : SV_Target
 	float3 litColor = ParallelLight(v, gLight, gEyePosW);
 
 	return float4(litColor, mixedColor.a);	
-	
-
-}
+}*/
 
 ////////////////////////////////////////////////////////////////////////////////
 // Techniques
@@ -181,16 +171,6 @@ technique10 TextureTechniqueHeight
         SetVertexShader(CompileShader(vs_4_0, TextureVertexShader()));
 		SetGeometryShader(NULL);
         SetPixelShader(CompileShader(ps_4_0, TexturePixelShaderHeight()));
-        
-    }
-}
-technique10 TextureTechniqueBlendMap
-{
-    pass pass0
-    {
-        SetVertexShader(CompileShader(vs_4_0, TextureVertexShader()));
-		SetGeometryShader(NULL);
-        SetPixelShader(CompileShader(ps_4_0, TexturePixelShaderBlendMap()));
         
     }
 }

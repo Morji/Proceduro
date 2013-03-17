@@ -1,37 +1,27 @@
 #include "Tree.h"
 
-Tree::Tree(ID3D10Device *d3dDevice, HWND hwnd, Vector3f position){
-	md3dDevice = d3dDevice;
-	mTreePosition = position;
+Tree::Tree(Vector3f position){
+	mTransform->position = position;
+	mBoundingBox = new BoundingBox(mTransform);
+	mRenderer = new Renderer(D3D10_PRIMITIVE_TOPOLOGY_POINTLIST);
+	AddComponent(mRenderer);
+	AddComponent(mBoundingBox);
+}
 
+bool Tree::Initialize(ID3D10Device* device, HWND hwnd){
+	md3dDevice = device;
 	mTreeShader = new TreeShader();
 	if (!mTreeShader->Initialize(md3dDevice,hwnd)){
 		MessageBox(hwnd, L"Error while creating new tree shader", L"Error", MB_OK);
 	}
-
 	treeTexture = new TextureLoader();
 	treeTexture->Initialize(md3dDevice,L"assets/textures/tree_bark.jpg");
 
-	mVB = 0;
-	mIB = 0;
-	mVertexCount = mIndexCount = 0;
+	return true;
 }
 
 
 Tree::~Tree(void){
-	// Release the index buffer.
-	ReleaseCOM(mIB);
-	// Release the vertex buffer.
-	ReleaseCOM(mVB);
-	while (!treeSegmentList.empty()){
-		TreeSegment *segment = treeSegmentList.back();
-		if (segment){
-			delete segment;
-			segment = nullptr;
-		}
-		treeSegmentList.pop_back();
-	}
-	treeSegmentList.clear();
 	if (mTreeShader){
 		delete mTreeShader;
 		mTreeShader = nullptr;
@@ -44,82 +34,24 @@ Tree::~Tree(void){
 	md3dDevice = 0;
 }
 
-bool Tree::InitializeBuffers(DWORD* indices, TreeVertex* vertices){
-
-	D3D10_BUFFER_DESC vertexBufferDesc, indexBufferDesc;
-	D3D10_SUBRESOURCE_DATA vertexData, indexData;
-	HRESULT result;
-
-	// Set up the description of the vertex buffer.
-	vertexBufferDesc.Usage = D3D10_USAGE_DEFAULT;
-	vertexBufferDesc.ByteWidth = sizeof(TreeVertex) * mVertexCount;
-	vertexBufferDesc.BindFlags = D3D10_BIND_VERTEX_BUFFER;
-	vertexBufferDesc.CPUAccessFlags = 0;
-	vertexBufferDesc.MiscFlags = 0;
-
-	// Give the subresource structure a pointer to the vertex data.
-	vertexData.pSysMem = vertices;
-
-	// Now finally create the vertex buffer.
-	result = md3dDevice->CreateBuffer(&vertexBufferDesc, &vertexData, &mVB);
-	if(FAILED(result))
-	{
-		return false;
-	}
-
-	// Set up the description of the index buffer.
-	indexBufferDesc.Usage = D3D10_USAGE_DEFAULT;
-	indexBufferDesc.ByteWidth = sizeof(DWORD) * mIndexCount;
-	indexBufferDesc.BindFlags = D3D10_BIND_INDEX_BUFFER;
-	indexBufferDesc.CPUAccessFlags = 0;
-	indexBufferDesc.MiscFlags = 0;
-
-	// Give the subresource structure a pointer to the index data.
-	indexData.pSysMem = indices;
-
-	// Create the index buffer.
-	result = md3dDevice->CreateBuffer(&indexBufferDesc, &indexData, &mIB);
-
-	if(FAILED(result)){
-		return false;
-	}
-
-	stride = sizeof(TreeVertex); //set the stride of the buffers to be the size of the vertex struct
-
-	return true;
-}
-
-void Tree::RenderTreeBuffers(){
-	// Set vertex buffer stride and offset.
-	offset = 0;
-	// Set the vertex buffer to active in the input assembler so it can be rendered.
-	md3dDevice->IASetVertexBuffers(0, 1, &mVB, &stride, &offset);
-
-	// Set the index buffer to active in the input assembler so it can be rendered.
-	md3dDevice->IASetIndexBuffer(mIB, DXGI_FORMAT_R32_UINT, 0);
-
-	// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
-	md3dDevice->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_POINTLIST);
-}
 
 void Tree::Render(D3DXMATRIX worldMatrix,D3DXMATRIX viewMatrix,D3DXMATRIX projectionMatrix, Vector3f eyePos, Light light, int lightType){
-	D3DXMATRIX m,mObjMatrix;
-	D3DXMatrixIdentity(&mObjMatrix);
-	D3DXMatrixTranslation(&m, mTreePosition.x, mTreePosition.y, mTreePosition.z);
-	mObjMatrix *= m;
-	mObjMatrix *= worldMatrix;
+	D3DXMATRIX mObjMatrix;
+	mTransform->GetTransformMatrix(mObjMatrix);
+	mObjMatrix*=worldMatrix;
 
 	//calculate LOD level
-	float distanceToTree = D3DXVec3Length(&(eyePos - mTreePosition));
-	distanceToTree = min(distanceToTree,MAX_DIST);
+	float distanceToTree = D3DXVec3Length(&(eyePos - mTransform->position));
+	distanceToTree = clamp(distanceToTree,MIN_DIST,MAX_DIST);
 	int lod = map(distanceToTree,MIN_DIST,MAX_DIST,MAX_LOD,MIN_LOD);
-
-	RenderTreeBuffers();
-	mTreeShader->Render(md3dDevice,mIndexCount,mObjMatrix,viewMatrix,projectionMatrix,eyePos, treeTexture->GetTexture(), lod, light,lightType);
+	mRenderer->RenderBuffers(md3dDevice);
+	mTreeShader->Render(md3dDevice,mRenderer->GetIndexCount(),mObjMatrix,viewMatrix,projectionMatrix,eyePos, treeTexture->GetTexture(), lod, light,lightType);
 }
 
 bool Tree::GenerateTreeSpaceExploration(float minGrowthSize, float startRadius, float maxHeight){
 
+	//create tree segment list needed for algorithm
+	std::vector<TreeSegment*>	treeSegmentList;
 	mTreeShader->SetMaxHeight(maxHeight);
 
 	const int targetPosSize = 800;
@@ -239,7 +171,7 @@ bool Tree::GenerateTreeSpaceExploration(float minGrowthSize, float startRadius, 
 	growthTargetHolder.clear();
 
 	//postprocess tree here
-	int minChildCountToRemain = 3;
+	int minChildCountToRemain = 10;
 	for (int i = 0; i < treeSegmentList.size(); i++){
 		TreeSegment *segment = treeSegmentList[i];
 		if (segment->GetChildCount() < minChildCountToRemain){
@@ -247,38 +179,61 @@ bool Tree::GenerateTreeSpaceExploration(float minGrowthSize, float startRadius, 
 			i--;
 		}
 	}
-
-	mVertexCount = mIndexCount = treeSegmentList.size();
-
-	TreeVertex *vertices = new TreeVertex[mVertexCount];
-	for (int i = 0; i < mVertexCount; i++){
-		treeSegmentList[i]->GetPosition(vertices[i].pos);
-		vertices[i].radius = treeSegmentList[i]->GetRadius();
+	DWORD vertexCount,indexCount;
+	vertexCount = indexCount = treeSegmentList.size();
+	
+	vector<Vector3f*> vertexVector;
+	vector<TreeVertex> treeVertexVector;
+	for (int i = 0; i < vertexCount; i++){
+		TreeVertex vertex;
+		treeSegmentList[i]->GetPosition(vertex.pos);
+		vertex.radius = treeSegmentList[i]->GetRadius();
 		TreeSegment *parent = treeSegmentList[i]->GetParent();
 		if (parent){
-			parent->GetPosition(vertices[i].parent);
-			vertices[i].parentRadius = parent->GetRadius();
+			parent->GetPosition(vertex.parent);
+			vertex.parentRadius = parent->GetRadius();
 		}
 		else{
-			vertices[i].parent = vertices[i].pos;
-			vertices[i].parentRadius = vertices[i].radius;
+			vertex.parent = vertex.pos;
+			vertex.parentRadius = vertex.radius;
 		}
+		vertexVector.push_back(&vertex.pos);
+		treeVertexVector.push_back(vertex);
 	}
 
-	DWORD	*indices = new DWORD[mIndexCount];
-	for (int i = 0; i < mIndexCount; i++){
+	mBoundingBox->CalculateBounds(&vertexVector);
+
+	DWORD	*indices = new DWORD[indexCount];
+	for (int i = 0; i < indexCount; i++){
 		indices[i] = i;
 	}
-	
-	if (!InitializeBuffers(indices,vertices)){
+	if (!mRenderer->InitializeBuffers<TreeVertex>(md3dDevice,indices,&treeVertexVector[0],vertexCount,indexCount)){
 		return false;
 	}
 
+	//cleanup
 	delete [] indices;
 	indices = nullptr;
 
-	delete [] vertices;
-	vertices = nullptr;
+	while (!treeSegmentList.empty()){
+		TreeSegment *segment = treeSegmentList.back();
+		if (segment){
+			delete segment;
+			segment = nullptr;
+		}
+		treeSegmentList.pop_back();
+	}
+	treeSegmentList.clear();
 
+	while (treeVertexVector.empty()){
+		treeVertexVector.pop_back();
+	}
+
+	vertexVector.clear();
+	treeVertexVector.clear();
 	return true;
+}
+
+BoundingBox *Tree::GetBoundingBox(){
+	return mBoundingBox;
 }

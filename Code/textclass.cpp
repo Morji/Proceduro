@@ -19,6 +19,7 @@ TextClass::TextClass()
 	m_sentence8 = 0;
 	m_sentence9 = 0;
 	m_sentence10 = 0;
+	m_sentence11 = 0;
 }
 
 
@@ -144,6 +145,12 @@ bool TextClass::Initialize(ID3D10Device* device, HWND hwnd, int screenWidth, int
 		return false;
 	}
 
+	result = InitializeSentence(&m_sentence11, 16, device);
+	if(!result)
+	{
+		return false;
+	}
+
 	return true;
 }
 
@@ -160,6 +167,7 @@ void TextClass::Shutdown()
 	ReleaseSentence(&m_sentence8);
 	ReleaseSentence(&m_sentence9);
 	ReleaseSentence(&m_sentence10);
+	ReleaseSentence(&m_sentence11);
 
 	// Release the font shader object.
 	if(m_FontShader)
@@ -526,6 +534,34 @@ bool TextClass::SetCpu(int cpu)
 	return true;
 }
 
+bool TextClass::SetRenderCount(int renderCount){
+	char tempString[16];
+	char renderString[16];
+	bool result;
+
+
+	// Truncate the fps to prevent a buffer over flow.
+	if(renderCount > 9999)
+	{
+		renderCount = 9999;
+	}
+
+	// Convert the fps integer to string format.
+	_itoa_s(renderCount, tempString, 10);
+
+	// Setup the fps string.
+	strcpy_s(renderString, "Rendering: ");
+	strcat_s(renderString, tempString);
+
+	// Update the sentence vertex buffer with the new string information.
+	result = UpdateSentence(m_sentence1, renderString, 10, 10, 0.0f, 1.0f, 0.0f);
+	if(!result)
+	{
+		return false;
+	}
+
+	return true;
+}
 
 bool TextClass::SetCameraPosition(float posX, float posY, float posZ)
 {

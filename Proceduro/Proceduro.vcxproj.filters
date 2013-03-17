@@ -70,6 +70,12 @@
     <Filter Include="Source Files\GameCameras">
       <UniqueIdentifier>{1e3cfe63-1aa1-42f1-943d-80a3b14f6234}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Objects\Components">
+      <UniqueIdentifier>{d5e745af-0b8c-415d-ae4b-56dc874193b4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Objects\Components">
+      <UniqueIdentifier>{b33247c7-4102-415e-8f35-d46dc6f2e7f6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Code\d3dclass.cpp">
@@ -120,9 +126,6 @@
     <ClCompile Include="..\Code\SimplexNoise.cpp">
       <Filter>Source Files\Utilities\MathUtils</Filter>
     </ClCompile>
-    <ClCompile Include="..\Code\CylinderObject.cpp">
-      <Filter>Source Files\Objects</Filter>
-    </ClCompile>
     <ClCompile Include="..\Code\Tree.cpp">
       <Filter>Source Files\Objects\Tree</Filter>
     </ClCompile>
@@ -159,14 +162,29 @@
     <ClCompile Include="..\Code\IShader.cpp">
       <Filter>Source Files\Shaders</Filter>
     </ClCompile>
-    <ClCompile Include="..\Code\MultiTextureShader.cpp">
-      <Filter>Source Files\Shaders</Filter>
-    </ClCompile>
     <ClCompile Include="..\Code\FontShader.cpp">
       <Filter>Source Files\Shaders</Filter>
     </ClCompile>
     <ClCompile Include="..\Code\TreeShader.cpp">
       <Filter>Source Files\Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\BoundingBox.cpp">
+      <Filter>Source Files\Objects\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\Frustum.cpp">
+      <Filter>Source Files\GraphicSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\BaseGameObject.cpp">
+      <Filter>Source Files\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\Transform.cpp">
+      <Filter>Source Files\Objects\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\TerrainHeightShader.cpp">
+      <Filter>Source Files\Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\Renderer.cpp">
+      <Filter>Source Files\Objects\Components</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -227,9 +245,6 @@
     <ClInclude Include="..\Code\SimplexNoise.h">
       <Filter>Header Files\Utilities\MathUtils</Filter>
     </ClInclude>
-    <ClInclude Include="..\Code\CylinderObject.h">
-      <Filter>Header Files\Objects</Filter>
-    </ClInclude>
     <ClInclude Include="..\Code\Tree.h">
       <Filter>Header Files\Objects\Tree</Filter>
     </ClInclude>
@@ -266,14 +281,35 @@
     <ClInclude Include="..\Code\IShader.h">
       <Filter>Header Files\Shaders</Filter>
     </ClInclude>
-    <ClInclude Include="..\Code\MultiTextureShader.h">
-      <Filter>Header Files\Shaders</Filter>
-    </ClInclude>
     <ClInclude Include="..\Code\FontShader.h">
       <Filter>Header Files\Shaders</Filter>
     </ClInclude>
     <ClInclude Include="..\Code\TreeShader.h">
       <Filter>Header Files\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\BoundingBox.h">
+      <Filter>Header Files\Objects\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="..\code\IComponent.h">
+      <Filter>Header Files\Objects\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="..\code\Frustum.h">
+      <Filter>Header Files\GraphicSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\ValMath.h">
+      <Filter>Header Files\Utilities\MathUtils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\BaseGameObject.h">
+      <Filter>Header Files\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\Transform.h">
+      <Filter>Header Files\Objects\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\TerrainHeightShader.h">
+      <Filter>Header Files\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\Renderer.h">
+      <Filter>Header Files\Objects\Components</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

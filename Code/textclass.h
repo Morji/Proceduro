@@ -46,6 +46,8 @@ public:
 	bool SetCameraPosition(float, float, float);
 	bool SetCameraRotation(float, float, float);
 
+	bool SetRenderCount(int);
+
 private:
 	bool InitializeSentence(SentenceType**, int, ID3D10Device* device);
 	bool UpdateSentence(SentenceType*, char*, int, int, float, float, float);
@@ -56,9 +58,11 @@ private:
 	FontClass* m_Font;
 	FontShader* m_FontShader;
 	int m_screenWidth, m_screenHeight;
-	D3DXMATRIX m_baseViewMatrix;
+	D3DXMATRIX m_baseViewMatrix;	
 	SentenceType *m_sentence1, *m_sentence2, *m_sentence3, *m_sentence4, *m_sentence5;
 	SentenceType *m_sentence6, *m_sentence7, *m_sentence8, *m_sentence9, *m_sentence10;
+	SentenceType *m_sentence11;
+
 };
 
 #endif
