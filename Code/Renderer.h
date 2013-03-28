@@ -17,13 +17,18 @@ Exposes: Renderer
 
 class Renderer : public IComponent{
 public:
-	Renderer(D3D_PRIMITIVE_TOPOLOGY topologyChoice): mVB(0), mIB(0),stride(0),offset(0),mVertexCount(0),mIndexCount(0){
+	//default renderer to a triangle list
+	Renderer(D3D_PRIMITIVE_TOPOLOGY topologyChoice = D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST): mVB(0), mIB(0),stride(0),offset(0),mVertexCount(0),mIndexCount(0),mDynamic(false){
 		mTopologyChoice = topologyChoice;
 	}
 
 	template <typename V>
 	bool InitializeBuffers(ID3D10Device	*md3dDevice, DWORD* indices, V *vertices, DWORD vertexCount, DWORD indexCount);
 	void RenderBuffers(ID3D10Device	*md3dDevice);
+
+	void SetDynamic(bool isDynamic);
+
+	ID3D10Buffer *GetVertexBuffer();
 
 	DWORD GetIndexCount();
 	DWORD GetVertexCount();
@@ -36,6 +41,8 @@ private:
 	unsigned int	offset;
 	DWORD			mVertexCount;
 	DWORD			mIndexCount;
+
+	bool			mDynamic;
 
 	D3D_PRIMITIVE_TOPOLOGY	mTopologyChoice;
 };
@@ -52,10 +59,16 @@ bool Renderer::InitializeBuffers(ID3D10Device *md3dDevice, DWORD* indices, V *ve
 	HRESULT result;
 
 	// Set up the description of the vertex buffer.
-	vertexBufferDesc.Usage = D3D10_USAGE_DEFAULT;
+	if (mDynamic){
+		vertexBufferDesc.Usage = D3D10_USAGE_DYNAMIC;
+		vertexBufferDesc.CPUAccessFlags = D3D10_CPU_ACCESS_WRITE;
+	}
+	else{
+		vertexBufferDesc.Usage = D3D10_USAGE_DEFAULT;
+		vertexBufferDesc.CPUAccessFlags = 0;
+	}
 	vertexBufferDesc.ByteWidth = sizeof(V) * mVertexCount;
-	vertexBufferDesc.BindFlags = D3D10_BIND_VERTEX_BUFFER;
-	vertexBufferDesc.CPUAccessFlags = 0;
+	vertexBufferDesc.BindFlags = D3D10_BIND_VERTEX_BUFFER;	
 	vertexBufferDesc.MiscFlags = 0;
 
 	// Give the subresource structure a pointer to the vertex data.

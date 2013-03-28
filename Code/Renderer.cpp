@@ -15,6 +15,18 @@ DWORD Renderer::GetVertexCount(){
 	return mVertexCount;
 }
 
+ID3D10Buffer *Renderer::GetVertexBuffer(){
+	//only allow access to the vertex buffer if in dynamic access mode
+	if (!mDynamic){
+		return 0;
+	}
+	return mVB;
+}
+
+void Renderer::SetDynamic(bool isDynamic){
+	mDynamic = isDynamic;
+}
+
 void Renderer::RenderBuffers(ID3D10Device *md3dDevice){
 	// Set vertex buffer stride and offset.
 	offset = 0;

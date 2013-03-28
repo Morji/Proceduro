@@ -43,6 +43,7 @@ public:
 	void SetKeyState(char key, bool state);
 	int  GetMouseScroll();
 	bool IsMouseLeftPressed();
+	bool IsMouseRightPressed();
 
 	bool IsSpacePressed();
 	bool IsEscapePressed();

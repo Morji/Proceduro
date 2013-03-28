@@ -535,15 +535,15 @@ bool TextClass::SetCpu(int cpu)
 }
 
 bool TextClass::SetRenderCount(int renderCount){
-	char tempString[16];
-	char renderString[16];
+	char tempString[20];
+	char renderString[20];
 	bool result;
 
 
 	// Truncate the fps to prevent a buffer over flow.
-	if(renderCount > 9999)
+	if(renderCount > 99999)
 	{
-		renderCount = 9999;
+		renderCount = 99999;
 	}
 
 	// Convert the fps integer to string format.

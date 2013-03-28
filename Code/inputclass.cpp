@@ -91,6 +91,14 @@ bool InputClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidth, int
 		return false;
 	}
 
+	// Set the current mouse pos
+	// get the current position of the cursor
+	POINT pt;
+	GetCursorPos( &pt );
+	ScreenToClient( hwnd, &pt );
+	m_mouseX = pt.x;
+	m_mouseY = pt.y;
+
 	// Acquire the mouse.
 	result = m_mouse->Acquire();
 	if(FAILED(result))
@@ -186,8 +194,6 @@ void InputClass::SetKeyState(char key, bool state){
 bool InputClass::ReadMouse()
 {
 	HRESULT result;
-
-
 	// Read the mouse device.
 	result = m_mouse->GetDeviceState(sizeof(DIMOUSESTATE), (LPVOID)&m_mouseState);
 	if(FAILED(result))
@@ -241,6 +247,13 @@ void InputClass::GetMouseLocation(int& mouseX, int& mouseY)
 
 bool InputClass::IsMouseLeftPressed(){
 	if (m_mouseState.rgbButtons[0]){
+		return true;
+	}
+	return false;
+}
+
+bool InputClass::IsMouseRightPressed(){
+	if (m_mouseState.rgbButtons[1]){
 		return true;
 	}
 	return false;

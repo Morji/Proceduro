@@ -5,6 +5,7 @@
 long stop, remaining;//for timer class
 
 GraphicsClass::GraphicsClass(){
+	mScreenWidth = mScreenHeight = 0;
 	mD3D = 0;
 	mTerrain = 0;
 	mCamera = 0;
@@ -13,6 +14,7 @@ GraphicsClass::GraphicsClass(){
 	mText = 0;
 	mOrthoTexShader = 0;
 	mFrustum	= 0;
+	mWater = 0;
 
 	mHorizontalBlurShader = 0;
 	mVerticalBlurShader = 0;
@@ -37,10 +39,19 @@ GraphicsClass::~GraphicsClass()
 
 bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, HINSTANCE hinstance)
 {
+	unsigned long timeSeed = time(NULL);
+	srand(timeSeed);
+	cout << "Started generation with seed " << timeSeed << endl;
+
 	bool result;
 	D3DXMATRIX basemViewMatrix;
 	char videoCard[128];
 	int videoMemory;
+
+	mScreenWidth = screenWidth;
+	mScreenHeight = screenHeight;
+
+	mHwnd = hwnd;
 
 	int downSampleWidth, downSampleHeight;
 	// Set the size to sample down to.
@@ -239,17 +250,18 @@ void GraphicsClass::InitLights(){
 void GraphicsClass::InitTerrain(HWND hwnd){
 	bool result;
 
-	srand(time(NULL));
-
+	cout << "Generating Terrain..." << endl;
 	//create a mTerrain generator 
 	TerrainGenerator *generator = new TerrainGenerator;
-	result = generator->GenerateGridDiamondSquare(8,20.0f,0.65f, true);
+	//result = generator->GenerateFaultLine(500,0.7f,64,64);
+	result = generator->GenerateGridDiamondSquare(7,20.0f,0.65f, true);
 	if(!result){
 		MessageBox(hwnd, L"Could properly generate mTerrain.", L"Error", MB_OK);
 	}
 
 	generator->NoiseOverTerrain(10.0f,50.0f);
 	
+	cout << "Initializing Terrain..." << endl;
 	//create mTerrain
 	mTerrain = new Terrain;
 	result = mTerrain->Initialize(mD3D->GetDevice(),hwnd);
@@ -262,15 +274,27 @@ void GraphicsClass::InitTerrain(HWND hwnd){
 		MessageBox(hwnd, L"Could properly generate mTerrain.", L"Error", MB_OK);
 	}
 	delete generator;
-	generator = nullptr;	
+	generator = nullptr;
+
+	cout << "Generating Water..." << endl;
+	//init water
+	mWater = new Water(Vector3f(0,50,0));
+	cout << "Initializing Water..." << endl;
+	result = mWater->Initialize(mD3D->GetDevice(),hwnd);
+	if (!result){
+		MessageBox(hwnd, L"Could not initialize mWater object.", L"Error", MB_OK);
+	}
 }
 
 void GraphicsClass::InitMisc(HWND hwnd){
+	bool result;
+	cout << "Generating and Initializing Trees..." << endl;
+	int numTrees = 5;
 	//Generate some trees
-	for (int i = 0; i < 5; i++){
+	for (int i = 0; i < numTrees; i++){
 		Vector3f mTreePos = mTerrain->GetRandomPoint();
 		Tree *tree = new Tree(mTreePos);
-		bool result = tree->Initialize(mD3D->GetDevice(),hwnd);
+		result = tree->Initialize(mD3D->GetDevice(),hwnd);
 		if(!result){
 			MessageBox(hwnd, L"Could not initialize mTree object.", L"Error", MB_OK);
 		}
@@ -281,15 +305,15 @@ void GraphicsClass::InitMisc(HWND hwnd){
 		if(!result){
 			MessageBox(hwnd, L"Could not initialize mTree object.", L"Error", MB_OK);
 		}
-		
 		mTreeCollection.push_back(tree);
+		cout << i+1 << " out of " << numTrees << " completed" << endl;
 	}
 
 	//Init frustum
 	mFrustum = new Frustum();
 	if (!mFrustum){
 		MessageBox(hwnd, L"Could not initialize mFrustum object.", L"Error", MB_OK);
-	}
+	}	
 }
 
 void GraphicsClass::Shutdown()
@@ -315,6 +339,11 @@ void GraphicsClass::Shutdown()
 	if (mTerrain){
 		delete mTerrain;
 		mTerrain = nullptr;
+	}
+
+	if (mWater){
+		delete mWater;
+		mWater = nullptr;
 	}
 
 	if (mCamera){
@@ -648,12 +677,14 @@ bool GraphicsClass::RenderScene(){
 	// Construct the frustum.
 	mFrustum->ConstructFrustum(SCREEN_DEPTH, mProjectionMatrix, mViewMatrix);
 	int renderCount = 0;
+	
+	mTerrain->Render(mFrustum,mWorldMatrix,mViewMatrix,mProjectionMatrix, camPos,mLight,0);
 
-	mTerrain->Render(mWorldMatrix,mViewMatrix,mProjectionMatrix, camPos,mLight,0);
+	BoundingBox *objectBox;
 	
 	for (int i = 0; i < mTreeCollection.size(); i++){
 		//check if all objects lie within the frustum
-		BoundingBox *objectBox = mTreeCollection[i]->GetBoundingBox();
+		objectBox = mTreeCollection[i]->GetBoundingBox();
 		if (objectBox){
 			if (mFrustum->CheckBoundingBox(objectBox)){
 				renderCount++;
@@ -664,9 +695,24 @@ bool GraphicsClass::RenderScene(){
 			mTreeCollection[i]->Render(mWorldMatrix,mViewMatrix,mProjectionMatrix, camPos,mLight,0);
 		}
 	}
-	if (!mText->SetRenderCount(renderCount)){
+	
+	objectBox = mWater->GetBoundingBox();
+	if (objectBox){
+		if (mFrustum->CheckBoundingBox(objectBox)){
+			renderCount++;
+			mD3D->TurnOnAlphaBlending();
+			mD3D->TurnCullingOff();
+			mWater->Render(mD3D->GetDevice(),mWorldMatrix,mViewMatrix,mProjectionMatrix, camPos,mLight,0);
+			mD3D->TurnCullingOn();
+			mD3D->TurnOffAlphaBlending();
+		}
+	}
+	
+
+	if (!mText->SetRenderCount(mTerrain->GetDrawCount())){
 		return false;
 	}
+
 	return true;
 }
 
@@ -692,19 +738,21 @@ void GraphicsClass::Update(float dt){
 	UpdateCamera(dt);
 	if (mInput->IsSpacePressed()){
 		mD3D->TurnWireframeOn();
-		/*bool result = mTerrain->NoiseOvermTerrain(25.0f,50.0f);
-		if(result){
-			mInput->SetKeyState(DIK_SPACE,false);
-		}*/
 	}
 	if (mInput->IsPgUpPressed()){
 		mD3D->TurnWireframeOff();
 	}
-	if (mInput->IsRightPressed()){
-		mTerrain->AnimateTerrain(dt);
-	}
 	if (mInput->IsPgDownPressed()){
 		mD3D->Screenshot();
+	}
+	if (mInput->IsRightPressed()){
+		mWater->SetSimulationState(!mWater->GetSimulationState());
+	}
+	if (mInput->IsMouseLeftPressed()){
+		POINT pt;
+		GetCursorPos( &pt );
+		ScreenToClient( mHwnd, &pt );
+		MousePick(pt.x,pt.y);
 	}
 }
 
@@ -721,7 +769,7 @@ void GraphicsClass::UpdateCamera(float dt){
 	if (mInput->IsDPressed()){
 		mCamera->moveLeftRight += mCamera->camMoveFactor*dt;
 	}
-	if (mInput->IsMouseLeftPressed()){
+	if (mInput->IsMouseRightPressed()){
 		int mouseX,mouseY;
 		mInput->GetMouseChange(mouseX,mouseY);
 		mCamera->MoveYawPitch(mouseX/500.0f,mouseY/500.0f);
@@ -730,4 +778,47 @@ void GraphicsClass::UpdateCamera(float dt){
 	D3DXVECTOR3 camPos;
 	mCamera->GetPosition(camPos); 
 	mText->SetCameraPosition(camPos.x,camPos.y,camPos.z);
+}
+
+void GraphicsClass::MousePick(int x, int y){
+	// Compute picking ray in view space.
+	mCamera->GetViewMatrix(mViewMatrix);
+	mD3D->GetProjectionMatrix(mProjectionMatrix);
+	mD3D->GetWorldMatrix(mWorldMatrix);
+	float vx = (+2.0f*x/mScreenWidth  - 1.0f)/mProjectionMatrix(0,0);
+	float vy = (-2.0f*y/mScreenHeight + 1.0f)/mProjectionMatrix(1,1);
+
+	D3DXVECTOR3 rayOrigin(0.0f, 0.0f, 0.0f);
+	D3DXVECTOR3 rayDir(vx, vy, 1.0f);
+
+	D3DXMATRIX inverseV;
+	D3DXMatrixInverse(&inverseV, 0, &mViewMatrix);
+
+	D3DXMATRIX inverseW;
+	D3DXMatrixInverse(&inverseW, 0, &mWorldMatrix);
+
+	D3DXVec3TransformCoord(&rayOrigin, &rayOrigin, &inverseV);
+	D3DXVec3TransformNormal(&rayDir, &rayDir, &inverseV);
+
+	// create 2 positions in screenspace using the cursor position. 0 is as
+    // close as possible to the camera, 1 is as far away as possible.
+    Vector3f nearSource = Vector3f(x, y, 0.0f);
+    Vector3f farSource = Vector3f(x, y, 1.0f);
+
+	// use Viewport.Unproject to tell what those two screen space positions
+    // would be in world space. we'll need the projection matrix and view
+    // matrix, which we have saved as member variables. We also need a world
+    // matrix, which can just be identity.
+	Vector3f nearPoint;
+	D3DXVec3Unproject(&nearPoint,&nearSource,mD3D->GetViewport(),&mProjectionMatrix,&mViewMatrix,&mWorldMatrix);
+
+    Vector3f farPoint;
+	D3DXVec3Unproject(&farPoint,&farSource,mD3D->GetViewport(),&mProjectionMatrix,&mViewMatrix,&mWorldMatrix);
+
+    // find the direction vector that goes from the nearPoint to the farPoint
+    // and normalize it....
+    Vector3f direction = farPoint - nearPoint;
+	D3DXVec3Normalize(&direction,&direction);
+
+	mWater->HandlePicking(nearPoint,direction);
 }

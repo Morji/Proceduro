@@ -17,14 +17,17 @@ Supported methods:
 #ifndef _TERRAIN_H
 #define _TERRAIN_H
 
+#include <iostream>
 #include "BaseGameObject.h"
 #include "TerrainHeightShader.h"
 #include "d3dUtil.h"
 #include "TextureLoader.h"
+#include "TerrainNode.h"
+#include "Frustum.h"
 #include "TerrainGenerator.h"
 
 #define CELLSPACING		1.0f
-#define	HEIGHT_FACTOR	0.2f;
+#define	HEIGHT_FACTOR	0.2f
 
 class Terrain : public BaseGameObject
 {
@@ -40,17 +43,18 @@ public:
 
 	// get a random point on the surface of the terrain
 	Vector3f	GetRandomPoint();
+	int			GetDrawCount();
 
-	void		AnimateUV(float dt);
-	void		AnimateTerrain(float dt);
-
-	void		Render(D3DXMATRIX worldMatrix,D3DXMATRIX viewMatrix,D3DXMATRIX projectionMatrix, Vector3f eyePos, Light light, int lightType);
+	void		Render(Frustum* frustum, D3DXMATRIX worldMatrix,D3DXMATRIX viewMatrix,D3DXMATRIX projectionMatrix, Vector3f eyePos, Light light, int lightType);
 
 private:
-
-	bool InitializeBuffers(DWORD* indices,  VertexNT* vertices);
-	void RenderBuffers();
+	void  RenderNode(TerrainNode* node, Frustum* frustum);
 	void  ComputeIndices();
+	void  ComputeMeshQuadTree();
+	void  CreateTreeNode(TerrainNode *node, float positionX, float positionZ, float diameter);
+	int	  GetTriangleCount(float positionX, float positionZ, float diameter);
+	bool  IsTriangleContained(int index, float positionX, float positionZ, float diameter);
+
 	void  ComputeNormals()const;				// computes the normals of the terrain on a per-vertex level
 	void  ComputeTextureCoords(const int repeatAmount = 1)const;		// computes the texture coordinates of the terrain
 
@@ -62,14 +66,11 @@ private:
 	TerrainHeightShader	*mTerrainShader;
 	ID3D10Device		*md3dDevice;
 
-	DWORD				mVertexCount;
-	DWORD				mIndexCount;
-	ID3D10Buffer		*mVB;
-	ID3D10Buffer		*mIB;
-
-	unsigned int		stride;
-	unsigned int		offset;
+	TerrainNode			*mBaseNode;
 private:	
+	int				mTotalNodes;
+	int				mTriangleCount;
+	int				mNodeCount;
 	float			animCoeff;
 	DWORD			*indices;
 	VertexNT		*vertices;
@@ -81,6 +82,10 @@ private:
 	float			*heightData;			//array containing the height data for ease of access for terrain collision
 
 	bool			terrainGeneratedToggle;
+	
+private:
+	static const int SUBDIVISIONS = 4;
+	int MAX_TRIANGLES;
 };
 
 #endif

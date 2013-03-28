@@ -28,6 +28,7 @@
 #include "OrthoTextureShader.h"
 #include "Frustum.h"
 #include "BoundingBox.h"
+#include "Water.h"
 
 using namespace std;
 
@@ -66,6 +67,7 @@ private:
 	bool RenderGUI();
 	void Update(float dt);
 	void UpdateCamera(float dt);
+	void MousePick(int x, int y);
 
 	void RenderSceneToTexture();
 	void DownSampleTexture();
@@ -85,6 +87,7 @@ private:
 	Light			mLight;
 
 	Terrain			*mTerrain;
+	Water			*mWater;
 
 	GameCamera		*mCamera;
 
@@ -98,6 +101,10 @@ private:
 	D3DXMATRIX mViewMatrix, mProjectionMatrix, mWorldMatrix, mOrthoMatrix;
 
 	Frustum					*mFrustum;
+
+	int mScreenWidth,mScreenHeight;
+
+	HWND mHwnd;
 private:
 	//collections 
 	vector<IShader*>	shaderCollection;

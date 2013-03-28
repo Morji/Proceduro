@@ -25,6 +25,7 @@ public:
 	void EndScene();
 
 	ID3D10Device* GetDevice();
+	D3D10_VIEWPORT	*GetViewport();
 
 	void GetProjectionMatrix(D3DXMATRIX&);
 	void GetWorldMatrix(D3DXMATRIX&);

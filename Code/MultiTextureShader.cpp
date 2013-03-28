@@ -1,17 +1,25 @@
-#include "TerrainHeightShader.h"
+#include "MultiTextureShader.h"
  
 
-TerrainHeightShader::TerrainHeightShader(void)
+MultiTextureShader::MultiTextureShader(void)
 {
+	 mTexMatrix			= 0;
+
 	 for (int i = 0; i < 3; i++){
 		 mHeights[i]		= 0;
 		 mDiffuseMapRV[i]	= 0;
-	 }		
+	 }
+	 			
+	 mSpecularMap		= 0;
+	 mBlendMap          = 0;			
 }
 
 
-TerrainHeightShader::~TerrainHeightShader(void)	
+MultiTextureShader::~MultiTextureShader(void)	
 {
+	mTexMatrix			= 0;
+	mSpecularMap		= 0;
+	mBlendMap           = 0;	
 
 	for (int i = 0; i < 3; i++){
 		mHeights[i]			= 0;
@@ -19,7 +27,7 @@ TerrainHeightShader::~TerrainHeightShader(void)
 	}
 }
 
-bool TerrainHeightShader::Initialize(ID3D10Device* device, HWND hwnd){
+bool MultiTextureShader::Initialize(ID3D10Device* device, HWND hwnd){
 
 	bool result;
 
@@ -36,17 +44,35 @@ bool TerrainHeightShader::Initialize(ID3D10Device* device, HWND hwnd){
 	return true;
 }
 
-void TerrainHeightShader::Render(ID3D10Device* device, int indexCount){
+void MultiTextureShader::Render(ID3D10Device* device, int indexCount, 
+													  D3DXMATRIX worldMatrix, 
+													  D3DXMATRIX viewMatrix, 
+													  D3DXMATRIX projectionMatrix,
+													  D3DXVECTOR3 mEyePos, 
+													  Light lightVar,
+													  ID3D10ShaderResourceView *specularMap,
+													  ID3D10ShaderResourceView *blendMap,
+													  ID3D10ShaderResourceView* diffuseMapRV1,
+													  ID3D10ShaderResourceView* diffuseMapRV2,
+													  ID3D10ShaderResourceView* diffuseMapRV3,
+													  float maxHeight,
+													  int lightType){
+
+	// Set the shader parameters that it will use for rendering.
+	SetShaderParameters(indexCount, worldMatrix, viewMatrix, projectionMatrix, mEyePos, lightVar, specularMap, blendMap,diffuseMapRV1,diffuseMapRV2,diffuseMapRV3,maxHeight,lightType);
 
 	// Now render the prepared buffers with the shader.
 	RenderShader(device, indexCount);
 }
 
-void TerrainHeightShader::SetShaderParameters(ID3D10Device* device, D3DXMATRIX worldMatrix, 
+void MultiTextureShader::SetShaderParameters(int indexCount, 
+											D3DXMATRIX worldMatrix, 
 											D3DXMATRIX viewMatrix, 
 											D3DXMATRIX projectionMatrix,
 											D3DXVECTOR3 mEyePos, 
-											Light lightVar,							
+											Light lightVar,											
+											ID3D10ShaderResourceView *specularMap,
+											ID3D10ShaderResourceView *blendMap,
 											ID3D10ShaderResourceView* diffuseMapRV1,
 											ID3D10ShaderResourceView* diffuseMapRV2,
 											ID3D10ShaderResourceView* diffuseMapRV3,
@@ -65,6 +91,12 @@ void TerrainHeightShader::SetShaderParameters(ID3D10Device* device, D3DXMATRIX w
 	// Set the light type inside the shader
 	mLightType->SetInt(lightType);
 
+	// Set the diffuse map shader var
+	mSpecularMap->SetResource(specularMap);
+
+	// Set the blend map shader var
+	mBlendMap->SetResource(blendMap);
+
 	//Set the diffuse map RV shader vars
 	mDiffuseMapRV[0]->SetResource(diffuseMapRV1);
 	mDiffuseMapRV[1]->SetResource(diffuseMapRV2);
@@ -76,7 +108,7 @@ void TerrainHeightShader::SetShaderParameters(ID3D10Device* device, D3DXMATRIX w
 	mHeights[2]->SetFloat(maxHeight);
 }
 
-bool TerrainHeightShader::InitializeShader(ID3D10Device* device, HWND hwnd, WCHAR* filename){
+bool MultiTextureShader::InitializeShader(ID3D10Device* device, HWND hwnd, WCHAR* filename){
 
 	HRESULT result;
 	ID3D10Blob* errorMessage;
@@ -157,11 +189,15 @@ bool TerrainHeightShader::InitializeShader(ID3D10Device* device, HWND hwnd, WCHA
 	mWorldMatrix =	mEffect->GetVariableByName("worldMatrix")->AsMatrix();
 	mViewMatrix =	mEffect->GetVariableByName("viewMatrix")->AsMatrix();
 	mProjectionMatrix = mEffect->GetVariableByName("projectionMatrix")->AsMatrix();
+	mTexMatrix = mEffect->GetVariableByName("texMatrix")->AsMatrix();
 
 	mEyePosVar		= mEffect->GetVariableByName("gEyePosW");
 
 	mLightVar		= mEffect->GetVariableByName("gLight");
 	mLightType		= mEffect->GetVariableByName("gLightType")->AsScalar();
+
+	mSpecularMap	= mEffect->GetVariableByName("gSpecMap")->AsShaderResource();
+	mBlendMap		= mEffect->GetVariableByName("gBlendMap")->AsShaderResource();
 
 	mDiffuseMapRV[0]	= mEffect->GetVariableByName("gLayer1")->AsShaderResource();
 	mDiffuseMapRV[1]	= mEffect->GetVariableByName("gLayer2")->AsShaderResource();

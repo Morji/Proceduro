@@ -175,7 +175,7 @@ bool Frustum::CheckRectangle(float xCenter, float yCenter, float zCenter, float 
 {
 	int i;
 
-
+	
 	// Check if any of the 6 planes of the rectangle are inside the view frustum.
 	for(i=0; i<6; i++)
 	{

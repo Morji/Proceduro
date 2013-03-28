@@ -39,6 +39,7 @@
     <ClCompile Include="..\Code\SimplexNoise.cpp" />
     <ClCompile Include="..\Code\systemclass.cpp" />
     <ClCompile Include="..\Code\TerrainGenerator.cpp" />
+    <ClCompile Include="..\Code\TerrainNode.cpp" />
     <ClCompile Include="..\Code\TexShader.cpp" />
     <ClCompile Include="..\Code\textclass.cpp" />
     <ClCompile Include="..\Code\TextureLoader.cpp" />
@@ -47,6 +48,8 @@
     <ClCompile Include="..\Code\TreeSegment.cpp" />
     <ClCompile Include="..\Code\TreeShader.cpp" />
     <ClCompile Include="..\Code\VerticalBlurShader.cpp" />
+    <ClCompile Include="..\Code\Water.cpp" />
+    <ClCompile Include="..\Code\WaterShader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Code\BaseGameObject.h" />
@@ -79,6 +82,7 @@
     <ClInclude Include="..\Code\SimplexNoise.h" />
     <ClInclude Include="..\Code\systemclass.h" />
     <ClInclude Include="..\Code\TerrainGenerator.h" />
+    <ClInclude Include="..\Code\TerrainNode.h" />
     <ClInclude Include="..\Code\TexShader.h" />
     <ClInclude Include="..\Code\textclass.h" />
     <ClInclude Include="..\Code\TextureLoader.h" />
@@ -90,6 +94,8 @@
     <ClInclude Include="..\Code\ValMath.h" />
     <ClInclude Include="..\Code\Vertex.h" />
     <ClInclude Include="..\Code\VerticalBlurShader.h" />
+    <ClInclude Include="..\Code\Water.h" />
+    <ClInclude Include="..\Code\WaterShader.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\color2.fx" />
@@ -104,6 +110,7 @@
     <None Include="Shaders\texture.fx" />
     <None Include="Shaders\treemagic.fx" />
     <None Include="Shaders\verticalblur.fx" />
+    <None Include="Shaders\watermagic.fx" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{4088DCDF-23FB-42FD-81D2-11DB1823BB57}</ProjectGuid>
@@ -131,7 +138,12 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>$(DXSDK_DIR)include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LibraryPath>$(DXSDK_DIR)lib\x86;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>

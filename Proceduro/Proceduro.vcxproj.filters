@@ -186,6 +186,15 @@
     <ClCompile Include="..\Code\Renderer.cpp">
       <Filter>Source Files\Objects\Components</Filter>
     </ClCompile>
+    <ClCompile Include="..\Code\TerrainNode.cpp">
+      <Filter>Source Files\Objects\Terrain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\Water.cpp">
+      <Filter>Source Files\Objects\Terrain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\WaterShader.cpp">
+      <Filter>Source Files\Shaders</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Code\GameObject.h">
@@ -311,6 +320,15 @@
     <ClInclude Include="..\Code\Renderer.h">
       <Filter>Header Files\Objects\Components</Filter>
     </ClInclude>
+    <ClInclude Include="..\Code\TerrainNode.h">
+      <Filter>Header Files\Objects\Terrain</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\Water.h">
+      <Filter>Header Files\Objects\Terrain</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\WaterShader.h">
+      <Filter>Header Files\Shaders</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\color2.fx">
@@ -347,6 +365,9 @@
       <Filter>EffectFiles</Filter>
     </None>
     <None Include="Shaders\treemagic.fx">
+      <Filter>EffectFiles</Filter>
+    </None>
+    <None Include="Shaders\watermagic.fx">
       <Filter>EffectFiles</Filter>
     </None>
   </ItemGroup>
