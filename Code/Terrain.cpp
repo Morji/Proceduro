@@ -3,12 +3,9 @@
 Terrain::Terrain(void)
 {
 	maxHeight = 0.0f;
-	terrainGeneratedToggle = false;
 	heightData = nullptr;
 	vertices = nullptr;
 	indices = nullptr;
-	texOffset = Vector2f(0,0);
-	animCoeff = 0.0f;
 	mTerrainShader = 0;
 	specularMap = 0;
 	mTotalNodes = 0;
@@ -16,7 +13,8 @@ Terrain::Terrain(void)
 		diffuseMapRV[i] = 0;
 	mTriangleCount = 0;
 	mNodeCount = 0;
-
+	mTrianglesPerNode = 0;
+	mTrianglesLooped = 0;
 }
 
 
@@ -205,8 +203,14 @@ void Terrain::ComputeMeshQuadTree(){
 	vertexCount = gridWidth*gridDepth;
 	indexCount = ((gridWidth-1)*(gridDepth-1)*6);
 	mTriangleCount = indexCount/3;
-	MAX_TRIANGLES = 20000;
-	
+
+	//find out how many nodes this terrain is going to be split into
+	mTrianglesPerNode = mTriangleCount;
+	while (mTrianglesPerNode > MAX_TRIANGLES){
+		mTrianglesPerNode /= 2;
+	}
+	mTotalNodes = mTriangleCount/mTrianglesPerNode;
+
 	// Initialize the center position of the mesh to zero.
 	centerX = 0.0f;
 	centerZ = 0.0f;
@@ -285,8 +289,7 @@ void Terrain::CreateTreeNode(TerrainNode *node, float positionX, float positionZ
 
 			// See if there are any triangles in the new node.
 			count = GetTriangleCount((positionX + offsetX), (positionZ + offsetZ), (diameter / 2.0f));
-			if(count > 0)
-			{
+			if(count > 0){
 				// If there are triangles inside where this new node would be then create the child node.
 				node->childNodes[i] = new TerrainNode();
 
@@ -298,7 +301,7 @@ void Terrain::CreateTreeNode(TerrainNode *node, float positionX, float positionZ
 	}
 
 	mNodeCount++;
-	std::cout << "Initializing node " << mNodeCount << std::endl;
+	std::cout << "Initializing node " << mNodeCount << " out of " << mTotalNodes << std::endl;
 
 	// Case 3: If this node is not empty and the triangle count for it is less than the max then 
 	// this node is at the bottom of the tree so create the list of triangles to store in it.
@@ -309,7 +312,6 @@ void Terrain::CreateTreeNode(TerrainNode *node, float positionX, float positionZ
 	vertexCount = numTriangles*3;
 	// Create the vertex array.
 	nodeVertices = new VertexNT[vertexCount];
-
 	int indexCount = numTriangles*3;
 	// Initialize the index for this new vertex and index array.
 	index = 0;
@@ -318,7 +320,7 @@ void Terrain::CreateTreeNode(TerrainNode *node, float positionX, float positionZ
 	for(int loop = 0; loop < mTriangleCount; loop++){
 		// If the triangle is inside this node then add it to the vertex array.
 		result = IsTriangleContained(loop, positionX, positionZ, diameter);
-		if(result == true){
+		if(result == true){			
 			// Calculate the index into the terrain vertex list.
 			vertexIndex = loop * 3;
 
@@ -343,12 +345,8 @@ void Terrain::CreateTreeNode(TerrainNode *node, float positionX, float positionZ
 			nodeIndices[index] = index;
 			index++;
 		}
-	}
-
-	// Create the index array.
-	//int indexCount = diameter*diameter*6;
-	
-	
+	}	
+	mTrianglesLooped += numTriangles;
 	/*int k = 0;
 	//bool switchPtrn = false;
 	for(int i = 0; i < diameter; ++i){
@@ -407,6 +405,7 @@ int	Terrain::GetTriangleCount(float positionX, float positionZ, float diameter){
 }
 
 bool Terrain::IsTriangleContained(int index, float positionX, float positionZ, float diameter){
+	
 	float radius;
 	int vertexIndex;
 	float x1, z1, x2, z2, x3, z3;

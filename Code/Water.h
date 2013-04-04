@@ -16,12 +16,12 @@ Exposes: Water
 #include "BaseGameObject.h"
 #include "WaterShader.h"
 #include "Renderer.h"
-#include "BoundingBox.h"
+#include <cmath>
 
 #define CELLSPACING		1.0f
 #define GRIDSIZE		100
 #define WAVE_SPEED		3.0f
-#define TIME_STEP		0.002f
+#define TIME_STEP		0.0007f
 #define DAMP_FACTOR		0.1f
 
 
@@ -34,8 +34,6 @@ public:
 	bool Initialize(ID3D10Device* device, HWND hwnd);
 
 	void Render(ID3D10Device* device,D3DXMATRIX worldMatrix,D3DXMATRIX viewMatrix,D3DXMATRIX projectionMatrix, Vector3f eyePos, Light light, int lightType);
-
-	BoundingBox *GetBoundingBox();
 
 	void HandlePicking(Vector3f rayOrigin, Vector3f rayDir);
 
@@ -65,7 +63,8 @@ private:
 	float		*nextStepHeight;
 
 	Renderer	*mRenderer;
-	BoundingBox *mBoundingBox;
+	Vector3f	*boundsMin;
+	Vector3f	*boundsMax;
 };
 
 #endif

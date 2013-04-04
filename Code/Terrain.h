@@ -18,6 +18,7 @@ Supported methods:
 #define _TERRAIN_H
 
 #include <iostream>
+#include <vector>
 #include "BaseGameObject.h"
 #include "TerrainHeightShader.h"
 #include "d3dUtil.h"
@@ -28,6 +29,9 @@ Supported methods:
 
 #define CELLSPACING		1.0f
 #define	HEIGHT_FACTOR	0.2f
+#define MAX_TRIANGLES   15000
+
+using namespace std;
 
 class Terrain : public BaseGameObject
 {
@@ -40,52 +44,48 @@ public:
 
 	float		GetMaxHeight();
 	float		GetHeight(float x, float z);
-
-	// get a random point on the surface of the terrain
-	Vector3f	GetRandomPoint();
-	int			GetDrawCount();
+	
+	Vector3f	GetRandomPoint(); // get a random point on the surface of the terrain
+	int			GetDrawCount(); // returns the amount of terrain nodes being drawn
 
 	void		Render(Frustum* frustum, D3DXMATRIX worldMatrix,D3DXMATRIX viewMatrix,D3DXMATRIX projectionMatrix, Vector3f eyePos, Light light, int lightType);
-
 private:
-	void  RenderNode(TerrainNode* node, Frustum* frustum);
+	//Initial terrain computing functions
 	void  ComputeIndices();
+	void  ComputeNormals()const;				// computes the normals of the terrain on a per-vertex level
+	void  ComputeTextureCoords(const int repeatAmount = 1)const;		// computes the texture coordinates of the terrain
+
+	void  RenderNode(TerrainNode* node, Frustum* frustum);
+	
 	void  ComputeMeshQuadTree();
 	void  CreateTreeNode(TerrainNode *node, float positionX, float positionZ, float diameter);
 	int	  GetTriangleCount(float positionX, float positionZ, float diameter);
 	bool  IsTriangleContained(int index, float positionX, float positionZ, float diameter);
 
-	void  ComputeNormals()const;				// computes the normals of the terrain on a per-vertex level
-	void  ComputeTextureCoords(const int repeatAmount = 1)const;		// computes the texture coordinates of the terrain
+
 
 	void  ResetData();
 
-	TextureLoader	*specularMap;
-	TextureLoader	*diffuseMapRV[3];
+	TextureLoader		*specularMap;
+	TextureLoader		*diffuseMapRV[3];
 
 	TerrainHeightShader	*mTerrainShader;
 	ID3D10Device		*md3dDevice;
 
 	TerrainNode			*mBaseNode;
 private:	
+	int				mTrianglesPerNode;
+	int				mTrianglesLooped;
 	int				mTotalNodes;
 	int				mTriangleCount;
 	int				mNodeCount;
-	float			animCoeff;
 	DWORD			*indices;
 	VertexNT		*vertices;
 	int				gridWidth;
 	int				gridDepth;
 	float			maxHeight;
 
-	Vector2f		texOffset;
-	float			*heightData;			//array containing the height data for ease of access for terrain collision
-
-	bool			terrainGeneratedToggle;
-	
-private:
-	static const int SUBDIVISIONS = 4;
-	int MAX_TRIANGLES;
+	float			*heightData;			//array containing the height data for ease of access for terrain collision	
 };
 
 #endif

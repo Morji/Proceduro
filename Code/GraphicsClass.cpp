@@ -39,7 +39,8 @@ GraphicsClass::~GraphicsClass()
 
 bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, HINSTANCE hinstance)
 {
-	unsigned long timeSeed = time(NULL);
+	time_t timeSeed = 1364476902;
+	//time(&timeSeed);
 	srand(timeSeed);
 	cout << "Started generation with seed " << timeSeed << endl;
 
@@ -250,11 +251,13 @@ void GraphicsClass::InitLights(){
 void GraphicsClass::InitTerrain(HWND hwnd){
 	bool result;
 
+	time_t timerStart;
+	time(&timerStart); 
+
 	cout << "Generating Terrain..." << endl;
-	//create a mTerrain generator 
+	//create a terrain generator 
 	TerrainGenerator *generator = new TerrainGenerator;
-	//result = generator->GenerateFaultLine(500,0.7f,64,64);
-	result = generator->GenerateGridDiamondSquare(7,20.0f,0.65f, true);
+	result = generator->GenerateGridDiamondSquare(8,20.0f,0.65f, true);
 	if(!result){
 		MessageBox(hwnd, L"Could properly generate mTerrain.", L"Error", MB_OK);
 	}
@@ -275,6 +278,10 @@ void GraphicsClass::InitTerrain(HWND hwnd){
 	}
 	delete generator;
 	generator = nullptr;
+
+	time_t timerEnd;
+	time(&timerEnd); 
+	cout << "Terrain generated in " << difftime(timerEnd,timerStart) << " seconds" << endl;
 
 	cout << "Generating Water..." << endl;
 	//init water
@@ -696,17 +703,15 @@ bool GraphicsClass::RenderScene(){
 		}
 	}
 	
-	objectBox = mWater->GetBoundingBox();
-	if (objectBox){
-		if (mFrustum->CheckBoundingBox(objectBox)){
+	//objectBox = mWater->GetBoundingBox();
+	//if (objectBox){
+		//if (mFrustum->CheckBoundingBox(objectBox)){
 			renderCount++;
 			mD3D->TurnOnAlphaBlending();
-			mD3D->TurnCullingOff();
 			mWater->Render(mD3D->GetDevice(),mWorldMatrix,mViewMatrix,mProjectionMatrix, camPos,mLight,0);
-			mD3D->TurnCullingOn();
 			mD3D->TurnOffAlphaBlending();
-		}
-	}
+		//}
+	//}
 	
 
 	if (!mText->SetRenderCount(mTerrain->GetDrawCount())){
