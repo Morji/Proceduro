@@ -28,7 +28,7 @@
 #include "Water.h"
 #include "Skydome.h"
 #include "Sun.h"
-#include "BlurEffect.h"
+#include "GlowEffect.h"
 
 using namespace std;
 
@@ -89,7 +89,7 @@ private:
 	GameCamera		*mCamera;
 	Frustum			*mFrustum;
 
-	BlurEffect		*mBlurEffect;
+	GlowEffect		*mGlowEffect;
 
 	OrthoWindow *mFullScreenWindow;
 

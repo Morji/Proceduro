@@ -1,5 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Filename: texture.fx
+// Filename: retainbrightness.fx - intended to output a texture 
+// that only retains bright pixels and discards the rest
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -7,7 +8,7 @@
 // GLOBALS //
 /////////////
 Texture2D shaderTexture;
-
+float	luminanceThreshold; //how luminant? a pixel has to be in order to glow (0 is not bright at all, 1 is fully bright)
 
 ///////////////////
 // SAMPLE STATES //
@@ -15,8 +16,8 @@ Texture2D shaderTexture;
 SamplerState SampleType
 {
     Filter = MIN_MAG_MIP_LINEAR;
-    AddressU = Clamp;
-    AddressV = Clamp;
+    AddressU = Wrap;
+    AddressV = Wrap;
 };
 
 
@@ -35,15 +36,14 @@ struct PixelInputType
     float2 tex : TEXCOORD0;
 };
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // Vertex Shader
 ////////////////////////////////////////////////////////////////////////////////
-PixelInputType TextureVertexShader(VertexInputType input)
+PixelInputType RetainBrightnessVertexShader(VertexInputType input)
 {
     PixelInputType output;
-    
-    
+    float texelSize;
+
 	// Change the position vector to be 4 units for proper matrix calculations.
     input.position.w = 1.0f;
 
@@ -52,29 +52,40 @@ PixelInputType TextureVertexShader(VertexInputType input)
     
 	// Store the texture coordinates for the pixel shader.
     output.tex = input.tex;
-    
+
 	return output;
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Pixel Shader
 ////////////////////////////////////////////////////////////////////////////////
-float4 TexturePixelShader(PixelInputType input) : SV_Target
+float4 RetainBrightnessPixelShader(PixelInputType input) : SV_Target
 {
-    return shaderTexture.Sample(SampleType, input.tex);
-}
+	float4 color;
 
+	// Initialize the color to black.
+	color = shaderTexture.Sample(SampleType, input.tex);
+
+	// calculate luminance of pixel - if below threshold, discard
+	// Color brightness calculation formula based on http://stackoverflow.com/questions/596216/formula-to-determine-brightness-of-rgb-color
+	float luminance = (0.299f*color.r) + (0.587f *color.g) + (0.114*color.b);
+	if (luminance < luminanceThreshold){
+		discard;
+	}
+	color.a = 1.0f;
+	return color;    
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Technique
 ////////////////////////////////////////////////////////////////////////////////
-technique10 TextureTechnique
+technique10 RetainBrightnessTechnique
 {
-    pass pass0
+	pass pass0
     {
-        SetVertexShader(CompileShader(vs_4_0, TextureVertexShader()));
-        SetPixelShader(CompileShader(ps_4_0, TexturePixelShader()));
+        SetVertexShader(CompileShader(vs_4_0, RetainBrightnessVertexShader()));
+        SetPixelShader(CompileShader(ps_4_0, RetainBrightnessPixelShader()));
         SetGeometryShader(NULL);
     }
+	
 }

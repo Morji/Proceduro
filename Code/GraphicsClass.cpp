@@ -17,7 +17,7 @@ GraphicsClass::GraphicsClass(){
 	mSkydome = nullptr;
 	mSun = nullptr;
 
-	mBlurEffect = nullptr;
+	mGlowEffect = nullptr;
 	mFullScreenWindow = nullptr;
 }
 
@@ -116,10 +116,10 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, HIN
 		return false;
 	}
 
-	mBlurEffect = new BlurEffect();
-	result = mBlurEffect->Initialize(mD3D,hwnd);
+	mGlowEffect = new GlowEffect();
+	result = mGlowEffect->Initialize(mD3D,hwnd);
 	if (!result){
-		MessageBox(hwnd, L"Could not initialize the blur effect.", L"Error", MB_OK);
+		MessageBox(hwnd, L"Could not initialize the glow effect.", L"Error", MB_OK);
 		return false;
 	}
 
@@ -275,9 +275,9 @@ void GraphicsClass::Shutdown()
 		mD3D = nullptr;
 	}
 
-	if (mBlurEffect){
-		delete mBlurEffect;
-		mBlurEffect = nullptr;
+	if (mGlowEffect){
+		delete mGlowEffect;
+		mGlowEffect = nullptr;
 	}
 
 	if (mInput){
@@ -352,8 +352,8 @@ bool GraphicsClass::Frame()
 	Update(mTimer.getDeltaTime());
 
 	// Render the graphics scene.
-	mD3D->BeginScene(0.0f, 0.0f, 0.0f, 0.0f);
-		//result = RenderScene();if(!result)	{return false;}
+	mD3D->BeginScene(0.0f, 0.0f, 0.0f, 0.0f);		
+		//result = RenderScene();if(!result){return false;}
 		result = BlurRender();if(!result){return false;}
 		result = RenderGUI();if(!result){return false;}
 	mD3D->EndScene();
@@ -370,14 +370,13 @@ bool GraphicsClass::Frame()
 }
 
 bool GraphicsClass::BlurRender(){
-	mBlurEffect->PrepareForSceneRender();
+	mGlowEffect->PrepareForSceneRender();
 		if (!RenderScene()){return false;}
-	mBlurEffect->SceneRenderFinished();	
-	mBlurEffect->RenderToWindow(mFullScreenWindow);
+	mGlowEffect->SceneRenderFinished();		
+	mGlowEffect->RenderToWindow(mFullScreenWindow);
 
 	return true;
 }
-
 
 bool GraphicsClass::RenderScene(){
 	mCamera->Render();
@@ -493,7 +492,7 @@ void GraphicsClass::Update(float dt){
 	mSun->Update(dt);
 	//update light
 	//mSun->GetLightDirection(&mLight.dir);
-	//mSun->GetAmbientLight(&mLight.ambient);
+	mSun->GetAmbientLight(&mLight.ambient);
 }
 
 void GraphicsClass::UpdateCamera(float dt){

@@ -6,6 +6,7 @@
 
 BlurShader::BlurShader()
 {
+	mTexture = nullptr;
 	mScreenHeight = nullptr;
 	for (int i = 0; i < 5; i++){
 		mWeights[i] = nullptr;
@@ -20,6 +21,7 @@ BlurShader::BlurShader(const BlurShader& other)
 
 BlurShader::~BlurShader()
 {
+	mTexture = nullptr;
 	mScreenHeight = nullptr;
 	for (int i = 0; i < 5; i++){
 		mWeights[i] = nullptr;

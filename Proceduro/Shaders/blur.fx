@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Filename: verticalblur.fx
+// Filename: blur.fx
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -22,8 +22,8 @@ float weight4;
 SamplerState SampleType
 {
     Filter = MIN_MAG_MIP_LINEAR;
-    AddressU = Wrap;
-    AddressV = Wrap;
+    AddressU = Clamp;
+    AddressV = Clamp;
 };
 
 

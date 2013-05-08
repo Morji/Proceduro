@@ -18,6 +18,10 @@ Requires: Vertex.h
 // REQUIRES: Renderer to be set to TRIANGLE_STRIP
 bool BuildSphere(int nRings, int nSegments, ID3D10Device* device, Renderer *targetRenderer);
 
+// Creates a sphere with the given color, number of rings and segments and then populates the vertex and index data into the target renderer
+// REQUIRES: Renderer to be set to TRIANGLE_STRIP
+bool BuildColoredSphere(int nRings, int nSegments, ID3D10Device* device, Renderer *targetRenderer, Color color);
+
 // Creates a unit cube with the target color and then populates the vertex and index data into the target renderer
 bool BuildColoredCube(ID3D10Device* device, Renderer *targetRenderer, Color color);
 

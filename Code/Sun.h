@@ -15,7 +15,7 @@ Exposes: Sun
 
 #include "BaseGameObject.h"
 #include "Renderer.h"
-#include "SunShader.h"
+#include "ColorShader.h"
 #include "Transform.h"
 #include "ID3DObject.h"
 
@@ -53,9 +53,8 @@ private:
 	Transform	*mTransform;
 
 private:
-	SunShader	*mSunShader;	
-	Color		mNormalColor;
-	Color		mGlowColor;
+	ColorShader	*mSunShader;	
+	Color		mColor;
 
 private:
 	float		angle;

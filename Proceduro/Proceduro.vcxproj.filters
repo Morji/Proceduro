@@ -210,9 +210,6 @@
     <ClCompile Include="..\Code\Sun.cpp">
       <Filter>Source Files\Objects\Scenic</Filter>
     </ClCompile>
-    <ClCompile Include="..\Code\SunShader.cpp">
-      <Filter>Source Files\Shaders</Filter>
-    </ClCompile>
     <ClCompile Include="..\Code\ColorShader.cpp">
       <Filter>Source Files\Shaders</Filter>
     </ClCompile>
@@ -222,7 +219,13 @@
     <ClCompile Include="..\Code\BlurShader.cpp">
       <Filter>Source Files\Shaders</Filter>
     </ClCompile>
-    <ClCompile Include="..\Code\BlurEffect.cpp">
+    <ClCompile Include="..\Code\RetainBrightnessShader.cpp">
+      <Filter>Source Files\Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\GlowShader.cpp">
+      <Filter>Source Files\Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Code\GlowEffect.cpp">
       <Filter>Source Files\GraphicSystem\PostProcessing</Filter>
     </ClCompile>
   </ItemGroup>
@@ -359,9 +362,6 @@
     <ClInclude Include="..\Code\Sun.h">
       <Filter>Header Files\Objects\Scenic</Filter>
     </ClInclude>
-    <ClInclude Include="..\Code\SunShader.h">
-      <Filter>Header Files\Shaders</Filter>
-    </ClInclude>
     <ClInclude Include="..\Code\ColorShader.h">
       <Filter>Header Files\Shaders</Filter>
     </ClInclude>
@@ -374,7 +374,13 @@
     <ClInclude Include="..\Code\BlurShader.h">
       <Filter>Header Files\Shaders</Filter>
     </ClInclude>
-    <ClInclude Include="..\Code\BlurEffect.h">
+    <ClInclude Include="..\Code\RetainBrightnessShader.h">
+      <Filter>Header Files\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Code\GlowShader.h">
+      <Filter>Header Files\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\code\GlowEffect.h">
       <Filter>Header Files\GraphicSystem\PostProcessing</Filter>
     </ClInclude>
   </ItemGroup>
@@ -418,10 +424,13 @@
     <None Include="Shaders\skydome.fx">
       <Filter>EffectFiles</Filter>
     </None>
-    <None Include="Shaders\suneffect.fx">
+    <None Include="Shaders\blur.fx">
       <Filter>EffectFiles</Filter>
     </None>
-    <None Include="Shaders\blur.fx">
+    <None Include="Shaders\retainbrightness.fx">
+      <Filter>EffectFiles</Filter>
+    </None>
+    <None Include="Shaders\glow.fx">
       <Filter>EffectFiles</Filter>
     </None>
   </ItemGroup>

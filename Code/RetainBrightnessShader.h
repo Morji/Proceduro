@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Filename: BlurShader.h
+// Filename: RetainBrightnessShader.h
 ////////////////////////////////////////////////////////////////////////////////
-#ifndef _BLURSHADER_H_
-#define _BLURSHADER_H_
+#ifndef _RETAINBRIGHTNESSSHADER_H_
+#define _RETAINBRIGHTNESSSHADER_H_
 
 
 //////////////
@@ -17,29 +17,22 @@ using namespace std;
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// Class name: BlurShader
+// Class name: RetainBrightnessShader
 ////////////////////////////////////////////////////////////////////////////////
-class BlurShader : public IShader
+class RetainBrightnessShader : public OrthoTextureShader
 {
 public:
-	BlurShader();
-	BlurShader(const BlurShader&);
-	~BlurShader();
+	RetainBrightnessShader();
+	RetainBrightnessShader(const RetainBrightnessShader&);
+	~RetainBrightnessShader();
 
 	bool Initialize(ID3D10Device*, HWND);
-	void SetWeights(float weigths[5]);
-	void RenderHorizontalBlur(ID3D10Device*, int, ID3D10ShaderResourceView*, float width);
-	void RenderVerticalBlur(ID3D10Device*, int, ID3D10ShaderResourceView*, float height);
+	void Render(ID3D10Device*, int, ID3D10ShaderResourceView*, float luminanceThreshold);
 private:
 	bool InitializeShader(ID3D10Device*, HWND, WCHAR*);
 
 private:
-	ID3D10EffectShaderResourceVariable*	mTexture;
-	ID3D10EffectScalarVariable* mScreenHeight;
-	ID3D10EffectScalarVariable* mScreenWidth;
-	ID3D10EffectScalarVariable*	mWeights[5];
-
-	ID3D10InputLayout* mLayoutVertical;
+	ID3D10EffectScalarVariable *mLuminanceThreshold;
 };
 
 

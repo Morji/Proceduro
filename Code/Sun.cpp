@@ -7,8 +7,7 @@ Sun::Sun(void):mSunRenderer(nullptr), angle(0.0f), mOrbitDistance(30.0f), mDegre
 	AddComponent(mSunRenderer,RENDERER);
 	mTransform = new Transform(this);
 	AddComponent(mTransform,TRANSFORM);
-	mNormalColor = Color(1.0f,1.0f,0.9f,1.0f);
-	mGlowColor = Color(0.9f,0.9f,0.9f,1.0f);
+	mColor = Color(1.0f,1.0f,1.0f,1.0f);
 
 	mDegreeRotation = DEGREES_PER_SECOND * DAY / (DAY_CYCLE_IN_MINUTES * MINUTE);
 	mRadianRotation = mDegreeRotation * PI/180.0f;
@@ -24,14 +23,14 @@ Sun::~Sun(void){
 
 bool Sun::Initialize(ID3D10Device* device, HWND hwnd){
 	mSunRenderer = new Renderer(this,D3D10_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	bool result = BuildSphere(10,10,device,mSunRenderer);
+	bool result = BuildColoredSphere(10,10,device,mSunRenderer,mColor);
 
 	if (!result){
 		MessageBox(hwnd, L"Error", L"Error initializing sun sphere", MB_OK);
 		return false;
 	}
 
-	mSunShader = new SunShader();
+	mSunShader = new ColorShader();
 	result = mSunShader->Initialize(device,hwnd);
 
 	if (!result){
@@ -49,7 +48,7 @@ void Sun::Render(ID3DObject* d3dObject, D3DXMATRIX viewMatrix){
 	d3dObject->GetWorldMatrix(mObjMatrix);
 	mTransform->GetTransformMatrix(mObjMatrix);
 
-	mSunShader->Render(d3dObject->GetDevice(),mSunRenderer->GetIndexCount(),mObjMatrix,viewMatrix,*d3dObject->GetProjectionMatrix(),mNormalColor,mGlowColor);
+	mSunShader->Render(d3dObject->GetDevice(),mSunRenderer->GetIndexCount(),mObjMatrix,viewMatrix,*d3dObject->GetProjectionMatrix());
 }
 
 void Sun::Update(float dt){
