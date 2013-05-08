@@ -21,4 +21,5 @@ private:
 	bool InitializeShader(ID3D10Device*, HWND, WCHAR*);
 
 };
+
 #endif

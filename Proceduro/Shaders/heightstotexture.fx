@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Filename: horizontalblur.fx
+// Filename: heightstotexture.fx
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -7,8 +7,6 @@
 // GLOBALS //
 /////////////
 Texture2D shaderTexture;
-float screenWidth;
-
 
 ///////////////////
 // SAMPLE STATES //
@@ -27,7 +25,6 @@ SamplerState SampleType
 struct VertexInputType
 {
     float4 position : POSITION;
-    float2 tex : TEXCOORD0;
 };
 
 struct PixelInputType

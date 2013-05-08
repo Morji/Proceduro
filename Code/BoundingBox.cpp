@@ -1,69 +1,63 @@
-/***************************************************************
-BoundingBox Class: Provides a bounding box component to be used
-as needed: for collision detection, culling, etc...
-
-Author: Valentin Hinov
-Date: 13/03/2013
-Version: 1.0
-
-Exposes: IComponent
-**************************************************************/
-
 #include "BoundingBox.h"
+#include "Transform.h"
+#include "BaseGameObject.h"
 
-BoundingBox::BoundingBox(Transform *parentTransform){
-	mCenter = Vector3f(0,0,0);
-	mParentTransform = parentTransform;
-	
+BoundingBox::BoundingBox(BaseGameObject *parent): Component(parent){
+
 }
 
 BoundingBox::~BoundingBox(){
-	mParentTransform = nullptr;
+	
 }
 
-void BoundingBox::GetBounds(Vector3f &center, Vector3f &size){
-	center = mParentTransform->position + mCenter;
-	size.x = mCenter.x * mParentTransform->scale.x;
-	size.y = mCenter.y * mParentTransform->scale.y;
-	size.z = mCenter.z * mParentTransform->scale.z;
+void BoundingBox::GetBounds(Vector3f *boundsMin, Vector3f *boundsMax){
+	boundsMin = &mBoundsMin;
+	boundsMax = &mBoundsMax;
 }
 
-void BoundingBox::CalculateBounds(std::vector<Vector3f*> *vertices){
-	//find the furthest X, Y and Z from the center
-	float xMax = 0.0f;
-	float yMax = 0.0f;
-	float zMax = 0.0f;
-	float xMin = 0.0f;
-	float yMin = 0.0f;
-	float zMin = 0.0f;
+void BoundingBox::GetBoundsWorldSpace(Vector3f &boundsMin, Vector3f &boundsMax){
+	Transform *pParentTransform = (Transform*)pParent->GetComponent(TRANSFORM);
+	boundsMin = (mBoundsMin + pParentTransform->position);
+	boundsMax = (mBoundsMax + pParentTransform->position);
+}
 
-	int numVerts = vertices->size();
-	for (int i = 0; i < numVerts; i++){
-		//compare x
-		if ( vertices->at(i)->x > xMax){
-			xMax = vertices->at(i)->x;
-		}
-		if ( vertices->at(i)->x < xMin){
-			xMin = vertices->at(i)->x;
-		}
-		//compare y
-		if ( vertices->at(i)->y > yMax){
-			yMax = vertices->at(i)->y;
-		}
-		if ( vertices->at(i)->y < yMin){
-			yMin = vertices->at(i)->y;
-		}
-		//compare z
-		if ( vertices->at(i)->z > zMax){
-			zMax = vertices->at(i)->z;
-		}
-		if ( vertices->at(i)->z < zMin){
-			zMin = vertices->at(i)->z;
-		}
+bool BoundingBox::IntersectsRay(Vector3f rayOrigin, Vector3f rayDir, bool localSpace)const{
+	//if local space is specified, transform ray to local space
+	if (localSpace){
+		TransformRayToLocalSpace(&rayOrigin,&rayDir);
 	}
-	//set center point
-	float width = xMax-xMin;
-	float height = yMax-yMin;
-	float depth = zMax-zMin;
-	mCenter = Vector3f(width/2.0f,height/2.0f,depth/2.0f);
+	return D3DXBoxBoundProbe(&mBoundsMin,&mBoundsMax,&rayOrigin,&rayDir) != 0;
+}
+
+bool BoundingBox::IntersectsRay(Vector3f rayOrigin, Vector3f rayDir, Vector3f *outLocalRayOrigin, Vector3f *outLocalRayDir)const{
+	TransformRayToLocalSpace(&rayOrigin,&rayDir);
+
+	bool hit = D3DXBoxBoundProbe(&mBoundsMin,&mBoundsMax,&rayOrigin,&rayDir) != 0;
+	if (hit){
+		*outLocalRayOrigin = rayOrigin;
+		*outLocalRayDir = rayDir;
+	}
+	else{
+		outLocalRayOrigin = nullptr;
+		outLocalRayDir = nullptr;
+	}
+	return hit;
+}
+
+void BoundingBox::TransformRayToLocalSpace(Vector3f *rayOrigin, Vector3f *rayDir)const{
+	Transform *pParentTransform = (Transform*)pParent->GetComponent(TRANSFORM);
+	D3DXMATRIX inverseW;
+	D3DXMATRIX mObjMatrix;
+	pParentTransform->GetTransformMatrix(mObjMatrix);	
+	D3DXMatrixInverse(&inverseW, 0, &mObjMatrix);
+	D3DXVec3TransformCoord(rayOrigin, rayOrigin, &inverseW);
+	D3DXVec3TransformNormal(rayDir, rayDir, &inverseW);
+}
+
+bool BoundingBox::CalculateBounds(Vector3f *firstVertex, int vertexCount, int stride){
+	HRESULT hr = D3DXComputeBoundingBox(firstVertex,vertexCount,stride,&mBoundsMin,&mBoundsMax);
+	if (FAILED(hr)){
+		return false;
+	}
+	return true;
 }

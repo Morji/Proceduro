@@ -19,13 +19,16 @@ GetComponent
 #ifndef _H_BASEGAMEOBJECT_H
 #define _H_BASEGAMEOBJECT_H
 
-#include "IComponent.h"
+#include "Component.h"
 #include "d3dUtil.h"
-#include "Transform.h"
-#include "BoundingBox.h"
-#include <vector>
-#include <typeinfo>
+#include <map>
 
+// allows fast access of the transform component
+class Transform;
+
+enum componentType_t{TRANSFORM,
+					 BOUNDING_BOX,
+					 RENDERER};
 
 class BaseGameObject{
 public:
@@ -34,14 +37,15 @@ public:
 
 	virtual bool Initialize(ID3D10Device* device, HWND hwnd) = 0;
 
-	Transform	*GetTransform();
+	Component *GetComponent(componentType_t componentType);
+	
+	Transform *GetTransform();
 
 private:
-	std::vector<IComponent*>	mComponentCollection;	
+	std::map<componentType_t,Component*> mComponentMap;
 	
 protected:
-	void AddComponent(IComponent *component);	
-	Transform *mTransform;
+	void AddComponent(Component *component,componentType_t componentType);
 };
 
 #endif

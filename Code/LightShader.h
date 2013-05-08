@@ -5,7 +5,6 @@
 #include "Light.h"
 
 class LightShader :	public IShader {
-
 public:	
 	LightShader(void);
 	~LightShader(void);

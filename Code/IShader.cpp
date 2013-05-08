@@ -30,7 +30,8 @@ void IShader::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND hwnd, WCHA
 	ReleaseCOM(errorMessage);
 
 	// Pop a message up on the screen to notify the user to check the text file for compile errors.
-	MessageBox(hwnd, L"Error compiling shader.  Check shader-error.txt for message.", shaderFilename, MB_OK);
+	if (hwnd)
+		MessageBox(hwnd, L"Error compiling shader.  Check shader-error.txt for message.", shaderFilename, MB_OK);
 }
 
 //RenderShader will invoke the HLSL shader program through the technique pointer.

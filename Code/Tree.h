@@ -15,14 +15,15 @@ Supported methods: Space Exploration
 
 #include <vector>
 
-#include "ValMath.h"
+#include "ID3DObject.h"
 #include "TexShader.h"
 #include "TreeShader.h"
 #include "TreeSegment.h"
-#include "BoundingBox.h"
 #include "TextureLoader.h"
 #include "BaseGameObject.h"
 #include "Renderer.h"
+#include "Transform.h"
+#include "BoundingBox.h"
 
 #define MAX_LOD		9
 #define MIN_LOD		4
@@ -31,13 +32,11 @@ Supported methods: Space Exploration
 
 class Tree : public BaseGameObject{
 public:
-	Tree(Vector3f position);
+	Tree(Vector3f position = Vector3f(0,0,0));
 
 	bool Initialize(ID3D10Device* device, HWND hwnd);
-	bool GenerateTreeSpaceExploration(float minGrowthSize, float startRadius, float maxHeight);
-	void Render(D3DXMATRIX worldMatrix,D3DXMATRIX viewMatrix,D3DXMATRIX projectionMatrix, Vector3f eyePos, Light light, int lightType);
-
-	BoundingBox		*GetBoundingBox();
+	bool GenerateTreeSpaceExploration(ID3D10Device* device, float minGrowthSize, float startRadius, float maxHeight);
+	void Render(ID3DObject *d3dObject, D3DXMATRIX viewMatrix, Vector3f eyePos, Light light, int lightType);
 
 	~Tree(void);
 private:
@@ -49,15 +48,14 @@ private:
 	};
 
 private:
-	ID3D10Device	*md3dDevice;
-	TextureLoader   *treeTexture;	
-	
+	TextureLoader   *mTreeTexture;	
 	TreeShader		*mTreeShader;
 
 private:
 	//Components
-	BoundingBox		*mBoundingBox;
 	Renderer		*mRenderer;
+	Transform		*mTransform;
+	BoundingBox		*mBoundingBox;
 };
 
 

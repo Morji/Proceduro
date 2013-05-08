@@ -171,10 +171,8 @@ bool Frustum::CheckSphere(float xCenter, float yCenter, float zCenter, float rad
 }
 
 
-bool Frustum::CheckRectangle(float xCenter, float yCenter, float zCenter, float xSize, float ySize, float zSize)
-{
+bool Frustum::CheckRectangle(float xCenter, float yCenter, float zCenter, float xSize, float ySize, float zSize){
 	int i;
-
 	
 	// Check if any of the 6 planes of the rectangle are inside the view frustum.
 	for(i=0; i<6; i++)
@@ -225,10 +223,60 @@ bool Frustum::CheckRectangle(float xCenter, float yCenter, float zCenter, float 
 	return true;
 }
 
+bool Frustum::CheckRectangleBounds(Vector3f *boundsMin, Vector3f *boundsMax){
+	int i;
+	
+	// Check if any of the 6 planes of the rectangle are inside the view frustum.
+	for(i=0; i<6; i++){
+		if(D3DXPlaneDotCoord(&m_planes[i], boundsMin) >= 0.0f)
+		{
+			continue;
+		}
+
+		if(D3DXPlaneDotCoord(&m_planes[i], &D3DXVECTOR3((boundsMax->x), (boundsMin->y), (boundsMin->z))) >= 0.0f)
+		{
+			continue;
+		}
+
+		if(D3DXPlaneDotCoord(&m_planes[i], &D3DXVECTOR3((boundsMin->x), (boundsMax->y), (boundsMin->z))) >= 0.0f)
+		{
+			continue;
+		}
+
+		if(D3DXPlaneDotCoord(&m_planes[i], &D3DXVECTOR3((boundsMin->x), (boundsMin->y), (boundsMax->z))) >= 0.0f)
+		{
+			continue;
+		}
+
+		if(D3DXPlaneDotCoord(&m_planes[i], &D3DXVECTOR3((boundsMax->x), (boundsMax->y), (boundsMin->z))) >= 0.0f)
+		{
+			continue;
+		}
+
+		if(D3DXPlaneDotCoord(&m_planes[i], &D3DXVECTOR3((boundsMax->x), (boundsMin->y), (boundsMax->z))) >= 0.0f)
+		{
+			continue;
+		}
+
+		if(D3DXPlaneDotCoord(&m_planes[i], &D3DXVECTOR3((boundsMin->x), (boundsMax->y), (boundsMax->z))) >= 0.0f)
+		{
+			continue;
+		}
+
+		if(D3DXPlaneDotCoord(&m_planes[i], boundsMax ) >= 0.0f)
+		{
+			continue;
+		}
+
+		return false;
+	}
+	return true;
+}
+
 
 bool Frustum::CheckBoundingBox(BoundingBox *boundingBox){
-	Vector3f center;
-	Vector3f size;
-	boundingBox->GetBounds(center,size);
-	return CheckRectangle(center.x,center.y,center.z,size.x,size.y,size.z);
+	Vector3f boundsMin;
+	Vector3f boundsMax;
+	boundingBox->GetBoundsWorldSpace(boundsMin,boundsMax);
+	return CheckRectangleBounds(&boundsMin,&boundsMax);
 }

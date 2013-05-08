@@ -5,8 +5,6 @@ cbuffer cbPerObject{
 	float4x4 worldMatrix;
 	float4x4 viewMatrix;
 	float4x4 projectionMatrix;
-
-	float4x4 wvpMatrix;
 };
 
 struct VertexInputType
@@ -22,7 +20,6 @@ struct PixelInputType
 };
 
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // Vertex Shader
 ////////////////////////////////////////////////////////////////////////////////
@@ -31,11 +28,9 @@ PixelInputType ColorVertexShader(VertexInputType input)
     PixelInputType output;    
 
     // Calculate the position of the vertex against the world, view, and projection matrices.
-    //output.position = mul(input.position, worldMatrix);
-    //output.position = mul(output.position, viewMatrix);
-   // output.position = mul(output.position, projectionMatrix);
-
-	output.position = mul(float4(input.position, 1.0f), wvpMatrix);
+    output.position = mul(float4(input.position,1.0f), worldMatrix);
+    output.position = mul(output.position, viewMatrix);
+    output.position = mul(output.position, projectionMatrix);
     
     // Store the input color for the pixel shader to use.
     output.color = input.color;
@@ -58,6 +53,6 @@ technique10 ColorTechnique
         SetVertexShader(CompileShader(vs_4_0, ColorVertexShader()));
 		SetGeometryShader(NULL);
         SetPixelShader(CompileShader(ps_4_0, ColorPixelShader()));
-       		
+       	
     }
 }

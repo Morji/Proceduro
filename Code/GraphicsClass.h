@@ -22,13 +22,13 @@
 #include "GameTimer.h"
 #include "Tree.h"
 #include "OrthoWindow.h"
-#include "HorizontalBlurShader.h"
-#include "VerticalBlurShader.h"
 #include "RenderTexture.h"
-#include "OrthoTextureShader.h"
 #include "Frustum.h"
 #include "BoundingBox.h"
 #include "Water.h"
+#include "Skydome.h"
+#include "Sun.h"
+#include "BlurEffect.h"
 
 using namespace std;
 
@@ -61,21 +61,16 @@ public:
 	bool Frame();
 
 private:
-	bool Render();
 	bool RenderScene();
 	bool BlurRender();
 	bool RenderGUI();
+	void RenderWater();
+	void RenderSky();
 	void Update(float dt);
 	void UpdateCamera(float dt);
 	void MousePick(int x, int y);
 
-	void RenderSceneToTexture();
-	void DownSampleTexture();
-	void RenderHorizontalBlurToTexture();
-	void RenderVerticalBlurToTexture();
-	void UpSampleTexture();
-	void Render2DTextureScene();
-
+	void ComputeRayFromMouse(int x, int y, Vector3f *outRayOrigin, Vector3f *outRayDir);
 private:
 	D3DClass*		mD3D;
 	InputClass*		mInput;
@@ -88,27 +83,27 @@ private:
 
 	Terrain			*mTerrain;
 	Water			*mWater;
+	Skydome			*mSkydome;
+	Sun				*mSun;
 
 	GameCamera		*mCamera;
+	Frustum			*mFrustum;
 
-	OrthoTextureShader		*mOrthoTexShader;
-	HorizontalBlurShader	*mHorizontalBlurShader;
-	VerticalBlurShader		*mVerticalBlurShader;
+	BlurEffect		*mBlurEffect;
 
-	RenderTexture *m_RenderTexture, *m_DownSampleTexure, *m_HorizontalBlurTexture, *m_VerticalBlurTexture, *m_UpSampleTexure;
 	OrthoWindow *mFullScreenWindow;
 
-	D3DXMATRIX mViewMatrix, mProjectionMatrix, mWorldMatrix, mOrthoMatrix;
-
-	Frustum					*mFrustum;
+	D3DXMATRIX mViewMatrix, mProjectionMatrix, mWorldMatrix, mOrthoMatrix;	
+	Vector3f mCamPos;
 
 	int mScreenWidth,mScreenHeight;
 
 	HWND mHwnd;
 private:
 	//collections 
-	vector<IShader*>	shaderCollection;
-	vector<Tree*>		mTreeCollection;
+	vector<IShader*>		mShaderCollection;
+	vector<Tree*>			mTreeCollection;
+	vector<BaseGameObject*> mObjectCollection;
 };
 
 #endif

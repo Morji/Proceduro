@@ -79,7 +79,7 @@ bool WaterShader::InitializeShader(ID3D10Device* device, HWND hwnd, WCHAR* filen
 		return false;
 	}
 
-	D3D10_INPUT_ELEMENT_DESC polygonLayout[2];
+	D3D10_INPUT_ELEMENT_DESC polygonLayout[3];
 
 	// Now setup the layout of the data that goes into the shader.
 	// This setup needs to match the VertexType stucture in the ModelClass and in the shader.
@@ -99,6 +99,13 @@ bool WaterShader::InitializeShader(ID3D10Device* device, HWND hwnd, WCHAR* filen
 	polygonLayout[1].InputSlotClass = D3D10_INPUT_PER_VERTEX_DATA;
 	polygonLayout[1].InstanceDataStepRate = 0;
 
+	polygonLayout[2].SemanticName = "COLOR";
+	polygonLayout[2].SemanticIndex = 0;
+	polygonLayout[2].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	polygonLayout[2].InputSlot = 0;
+	polygonLayout[2].AlignedByteOffset = D3D10_APPEND_ALIGNED_ELEMENT;
+	polygonLayout[2].InputSlotClass = D3D10_INPUT_PER_VERTEX_DATA;
+	polygonLayout[2].InstanceDataStepRate = 0;
 
 	// Get a count of the elements in the layout.
     numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);

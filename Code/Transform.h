@@ -11,12 +11,12 @@ Exposes: Transform
 #ifndef _H_TRANSFORM_H
 #define _H_TRANSFORM_H
 
-#include "IComponent.h"
+#include "Component.h"
 #include "Vertex.h"
 
-class Transform : public IComponent{
+class Transform : public Component{
 public:
-	Transform(): position(1,1,1),rotation(0,0,0),scale(1,1,1){
+	Transform(BaseGameObject *parent):Component(parent), position(0,0,0),rotation(0,0,0),scale(1,1,1){
 
 	}
 

@@ -2,16 +2,19 @@
 
 
 Water::Water(Vector3f position){
-	mWaterShader = 0;
-	mRenderer = new Renderer();
+	mWaterShader = nullptr;
+	simulateWave = simulateHeat = false;
+
+	mRenderer = new Renderer(this);
 	mRenderer->SetDynamic(true);
-	AddComponent(mRenderer);
+	AddComponent(mRenderer,RENDERER);
+	
+	mBoundingBox = new BoundingBox(this);
+	AddComponent(mBoundingBox,BOUNDING_BOX);
 
-	simulate = false;
-
-	boundsMin = boundsMax = 0;
-
+	mTransform = new Transform(this);
 	mTransform->position = position;
+	AddComponent(mTransform,TRANSFORM);
 }
 
 
@@ -36,14 +39,19 @@ Water::~Water(void){
 		delete [] nextStepHeight;
 		nextStepHeight = nullptr;
 	}
+	if (currHeat){
+		delete [] prevStepHeight;
+		prevStepHeight = nullptr;
+	}
+	if (nextStepHeat){
+		delete [] nextStepHeight;
+		nextStepHeight = nullptr;
+	}
 }
 
 bool Water::Initialize(ID3D10Device* device, HWND hwnd){
 	
 	//make sure the wave equation is stable
-	/*if ( TIME_STEP > SPACING/(WAVE_SPEED*sqrt(2.0f)) ){
-		return false;
-	}*/
 	float stableNumber = DAMP_FACTOR + sqrt(32*WAVE_SPEED*WAVE_SPEED/SPACING*SPACING)/(8*WAVE_SPEED*WAVE_SPEED/SPACING*SPACING);
 	if ( TIME_STEP > stableNumber ){
 		return false;
@@ -58,6 +66,10 @@ bool Water::Initialize(ID3D10Device* device, HWND hwnd){
 	int triangleCount = vertexCount / 3;
 	prevStepHeight = new float[vertexCount];
 	nextStepHeight = new float[vertexCount];
+
+	currHeat = new float[vertexCount];
+	nextStepHeat = new float[vertexCount];
+
 	vertices = new WaterVertex[vertexCount];
 	for(int i = 0; i < GRIDSIZE; ++i){
 		float z = halfDepth - i*dx;		
@@ -68,6 +80,10 @@ bool Water::Initialize(ID3D10Device* device, HWND hwnd){
 			prevStepHeight[index] = 0;
 			vertices[index].pos = Vector3f(x, y, z);
 			vertices[index].normal = Vector3f(0,1,0);
+			currHeat[index] = 0.0f;
+			vertices[index].color = WATER_BLUE_COLOR;
+			vertices[index].color.r = currHeat[index];
+			vertices[index].color.b = 1.0f - currHeat[index];
 		}
 	}
 
@@ -109,25 +125,18 @@ bool Water::Initialize(ID3D10Device* device, HWND hwnd){
 			float height = (float)(sin((float)(iter/2)/(GRIDSIZE))*2.0f);
 			prevStepHeight[index] = height;
 			vertices[index].pos.y = height;
-			
 		}
 	}
-	if (!mRenderer->InitializeBuffers<WaterVertex>(device,indices,vertices,vertexCount,indexCount)){
+	if (!mRenderer->InitializeBuffers(device,indices,vertices,sizeof(WaterVertex),vertexCount,indexCount)){
 		MessageBox(hwnd, L"Error initializing water", NULL, MB_OK);
 		return false;
 	}
-	
-	/*if (indices){
-		delete [] indices;
-		indices = nullptr;
-	}*/
 
 	//calculate bounding box
-	boundsMin = new Vector3f();
-	boundsMax = new Vector3f();
-	HRESULT hr = D3DXComputeBoundingBox(&vertices[0].pos,vertexCount,sizeof(WaterVertex),boundsMin,boundsMax);
-	if (FAILED(hr)){
-		MessageBox(hwnd, L"Error creating water bounding box", NULL, MB_OK);
+	bool result = mBoundingBox->CalculateBounds(&vertices[0].pos,vertexCount,sizeof(WaterVertex));
+	if (!result){
+		MessageBox(hwnd, L"Error initializing water bounding box", NULL, MB_OK);
+		return false;
 	}
 	//create shader
 	mWaterShader = new WaterShader();
@@ -139,39 +148,29 @@ bool Water::Initialize(ID3D10Device* device, HWND hwnd){
 	return true;
 }
 
-void Water::Render(ID3D10Device* device,D3DXMATRIX worldMatrix,D3DXMATRIX viewMatrix,D3DXMATRIX projectionMatrix, Vector3f eyePos, Light light, int lightType){
-	if (simulate){
-		RunSimulation(device);
+void Water::Render(ID3DObject* d3dObject, D3DXMATRIX viewMatrix, Vector3f eyePos, Light light, int lightType){
+	if (simulateWave || simulateHeat){
+		RunSimulation(d3dObject->GetDevice());
 	}
 	
 	D3DXMATRIX mObjMatrix;
+	d3dObject->GetWorldMatrix(mObjMatrix);
 	mTransform->GetTransformMatrix(mObjMatrix);
-	mObjMatrix*=worldMatrix;
 	
-	mRenderer->RenderBuffers(device);
-	mWaterShader->SetShaderParameters(mObjMatrix,viewMatrix,projectionMatrix,eyePos,light,lightType);
-	mWaterShader->Render(device,mRenderer->GetIndexCount());
+	mRenderer->RenderBuffers(d3dObject->GetDevice());
+	mWaterShader->SetShaderParameters(mObjMatrix,viewMatrix,*d3dObject->GetProjectionMatrix(),eyePos,light,lightType);
+	mWaterShader->Render(d3dObject->GetDevice(),mRenderer->GetIndexCount());
 }
 
-void Water::HandlePicking(Vector3f rayOrigin, Vector3f rayDir){
+bool Water::CanHandlePicking(Vector3f rayOrigin, Vector3f rayDir){
 	//do not do picking if not simulating
-	if (!simulate){
-		return;
+	if (!simulateWave && !simulateHeat){
+		return false;
 	}
-
-	// Transform to the mesh's local space.
-	D3DXMATRIX inverseW;
-	D3DXMATRIX mObjMatrix;
-	mTransform->GetTransformMatrix(mObjMatrix);	
-	D3DXMatrixInverse(&inverseW, 0, &mObjMatrix);
-	D3DXVec3TransformCoord(&rayOrigin, &rayOrigin, &inverseW);
-	D3DXVec3TransformNormal(&rayDir, &rayDir, &inverseW);
-
-	//do not handle picking if ray outside bounding box
-	bool intersectBox = D3DXBoxBoundProbe(boundsMin,boundsMax,&rayOrigin,&rayDir) != 0;
-
-	if (!intersectBox){
-		return;
+	Vector3f localRayOrigin;
+	Vector3f localRayDir;
+	if (!mBoundingBox->IntersectsRay(rayOrigin,rayDir,&localRayOrigin,&localRayDir)){
+		return false;
 	}
 
 	//check every triangle in the mesh
@@ -179,16 +178,14 @@ void Water::HandlePicking(Vector3f rayOrigin, Vector3f rayDir){
 	int vertexIndex = 0;
 	Vector3f intersection;
 	for (int i = 0; i < mTriangleCount; i++){
-		CheckTriangleIntersection(i,rayOrigin,rayDir,intersection);
+		CheckTriangleIntersection(i,&localRayOrigin,&localRayDir,&intersection);
 	}
+	return true; // water handled picking
 }
 
-bool Water::CheckTriangleIntersection(int index,Vector3f &rayOrigin,Vector3f &rayDir, Vector3f &intersectionPoint){
+bool Water::CheckTriangleIntersection(int index,Vector3f *rayOrigin,Vector3f *rayDir, Vector3f *outIntersectionPoint){
 	int vertexIndex = 0;
 	vertexIndex = index * 3;
-
- 	int i = vertexIndex/(GRIDSIZE-1);
-	int j = vertexIndex%(GRIDSIZE-1);
 
 	Vector3f *v0,*v1,*v2;
 	// Get the three vertices of this triangle from the vertex list.
@@ -198,12 +195,42 @@ bool Water::CheckTriangleIntersection(int index,Vector3f &rayOrigin,Vector3f &ra
 
 	float u,v,dist;
 
-	bool result = D3DXIntersectTri(v0,v1,v2,&rayOrigin,&rayDir,&u,&v,&dist) != 0;
+	bool result = D3DXIntersectTri(v0,v1,v2,rayOrigin,rayDir,&u,&v,&dist) != 0;
 
 	if (result){
-		v0->y += cos(dist)/1.5f;
-		v1->y += cos(dist)/1.5f;
-		v2->y += cos(dist)/1.5f;
+		//holding shift modifies heat, else modify waves
+		if (GetAsyncKeyState(VK_SHIFT)){
+			//grab 3 triangles
+			if (vertexIndex > 3){
+				currHeat[indices[vertexIndex]] = 1.0f;
+				currHeat[indices[vertexIndex-1]] = 1.0f;
+				currHeat[indices[vertexIndex-2]] = 1.0f;
+			}
+			currHeat[indices[vertexIndex]] = 1.0f;
+			currHeat[indices[vertexIndex+1]] = 1.0f;
+			currHeat[indices[vertexIndex+2]] = 1.0f;
+			if (vertexIndex+3 < mRenderer->GetIndexCount()){
+				currHeat[indices[vertexIndex+2]] = 1.0f;
+				currHeat[indices[vertexIndex+3]] = 1.0f;
+				currHeat[indices[vertexIndex+4]] = 1.0f;
+			}
+		}
+		else{
+			float amount = cos(dist)/1.5f;
+			v0->y += amount;
+			v1->y += amount;
+			v2->y += amount;
+			if (vertexIndex > 3){
+				vertices[indices[vertexIndex-2]].pos.y += amount;
+				vertices[indices[vertexIndex-1]].pos.y += amount;
+				vertices[indices[vertexIndex]].pos.y += amount;
+			}
+			if (vertexIndex+3 < mRenderer->GetIndexCount()){
+				vertices[indices[vertexIndex+2]].pos.y += amount;
+				vertices[indices[vertexIndex+3]].pos.y += amount;
+				vertices[indices[vertexIndex+4]].pos.y += amount;
+			}	
+		}
 	}
 	
 	return result;
@@ -214,6 +241,7 @@ void Water::RunSimulation(ID3D10Device* device){
 	for(int i = 0; i < GRIDSIZE; ++i){
 		for(int j = 0; j < GRIDSIZE; ++j){
 			ComputeWaveEqn(i,j);
+			ComputeHeatEqn(i,j);
 		}
 	}
 	
@@ -223,12 +251,42 @@ void Water::RunSimulation(ID3D10Device* device){
 	for(int i = 0; i < GRIDSIZE; ++i){
 		for(int j = 0; j < GRIDSIZE; ++j){
 			int index = i*GRIDSIZE+j;
-			prevStepHeight[index] = vertices[index].pos.y;
-			vertices[index].pos.y = nextStepHeight[index];	
+			//wave equation results
+			prevStepHeight[index] = vertices[index].pos.y;			
+			vertices[index].pos.y = nextStepHeight[index];				
 			newVertices[index] = vertices[index];
+
+			//heat equation results
+			currHeat[index] = nextStepHeat[index];
+			vertices[index].color.r = currHeat[index];
+			vertices[index].color.b = 1.0f - currHeat[index];
 		}
 	}
 	mRenderer->GetVertexBuffer()->Unmap();
+}
+
+void Water::ComputeHeatEqn(int i, int j){
+	int index = i*GRIDSIZE+j;
+
+	if (i <= 0 || j <= 0 || i >= GRIDSIZE-1 || j >= GRIDSIZE-1){
+		nextStepHeat[index] = 0.0f;
+		return;
+	}
+
+	//compute heat equation using euler method
+	if (COURANT_NUMBER > 0.5f){
+		return;
+	}
+	float heat = currHeat[index] + COURANT_NUMBER*( GetHeat(i-1,j) + GetHeat(i+1,j) + GetHeat(i,j-1) + GetHeat(i,j+1) - 4*GetHeat(i,j) );
+	nextStepHeat[index] = heat;
+}
+
+float Water::GetHeat( int i, int j){	
+	if (i <= 0 || j <= 0 || i >= GRIDSIZE-1 || j >= GRIDSIZE-1){
+		return 0.0f;
+	}
+	int index = i*GRIDSIZE+j;
+	return currHeat[index];
 }
 
 void Water::ComputeWaveEqn(int i, int j){
@@ -246,13 +304,7 @@ void Water::ComputeWaveEqn(int i, int j){
 	float height = 2*u - uPrev*( 1-(TIME_STEP/DAMP_FACTOR/2.0f) ) +  (GetHeight(i-1,j) + GetHeight(i+1,j) + GetHeight(i,j-1) + GetHeight(i,j+1) - 4*u)*ctx2;
 	height /= 1+(TIME_STEP/DAMP_FACTOR/2.0f);
 
-	float s1Norm = (height - uPrev)/2.0f*CELLSPACING;
-	Vector3f T = Vector3f(0,s1Norm,1);
-	Vector3f B = Vector3f(1,s1Norm,0);
-
-	Vector3f normal;
-	D3DXVec3Cross(&normal,&T,&B);
-	D3DXVec3Normalize(&normal,&normal);
+	Vector3f normal = Vector3f( (GetHeight(i+1,j) - GetHeight(i-1,j))/2*CELLSPACING,1,-(GetHeight(i,j+1) - GetHeight(i,j-1))/2*CELLSPACING );
 	vertices[index].normal = normal;
 
 	nextStepHeight[index] = height;
@@ -268,9 +320,10 @@ float Water::GetHeight( int i, int j){
 }
 
 void Water::SetSimulationState(bool state){
-	simulate = state;
+	simulateHeat = state;
+	simulateWave = state;
 }
 
 bool Water::GetSimulationState(){
-	return simulate;
+	return simulateHeat && simulateWave;
 }

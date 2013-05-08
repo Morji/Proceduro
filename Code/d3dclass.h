@@ -5,13 +5,13 @@
 #define _D3DCLASS_H_
 
 
-#include "d3dUtil.h"
+#include "ID3DObject.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class name: D3DClass
 ////////////////////////////////////////////////////////////////////////////////
-class D3DClass
+class D3DClass: public ID3DObject
 {
 public:
 	D3DClass();
@@ -27,9 +27,15 @@ public:
 	ID3D10Device* GetDevice();
 	D3D10_VIEWPORT	*GetViewport();
 
+	D3DXMATRIX *GetProjectionMatrix();
+	D3DXMATRIX *GetWorldMatrix();
+	D3DXMATRIX *GetOrthoMatrix();
 	void GetProjectionMatrix(D3DXMATRIX&);
 	void GetWorldMatrix(D3DXMATRIX&);
 	void GetOrthoMatrix(D3DXMATRIX&);
+
+	void GetScreenDimensions(int *width, int *height);
+	void GetScreenDepthInfo(float *nearVal, float *farVal);
 
 	void SetBackBufferRenderTarget();
 	void ResetViewport();
@@ -45,14 +51,20 @@ public:
 	void TurnCullingOn();
 	void TurnCullingOff();
 
-	void GetVideoCardInfo(char*, int&);
-
 	bool Screenshot();
+
+	void GetVideoCardInfo(char*, int&);
 
 private:
 	bool BuildRasterizers();
 	bool BuildBlendStates();
 	bool BuildDepthStencilStates();
+
+private:
+	int		mScreenWidth;
+	int		mScreenHeight;
+	float	mScreenNear;
+	float	mScreenDepth;
 
 private:
 	bool	m_vsync_enabled;

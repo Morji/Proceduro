@@ -1,40 +1,35 @@
 #include "BaseGameObject.h"
-
+#include "Transform.h"
 
 BaseGameObject::BaseGameObject(void)
 {
-	mTransform = new Transform();
-	AddComponent(mTransform);
+	
 }
 
 
 BaseGameObject::~BaseGameObject(void)
 {
-	while (mComponentCollection.empty()){
-		IComponent *component = mComponentCollection.back();
-		if (component){
-			delete component;
-			component = nullptr;
+	std::map<componentType_t, Component*>::iterator itr = mComponentMap.begin();
+	while (itr != mComponentMap.end()) {
+		if (itr->second != nullptr){
+			delete itr->second;
+			itr++;
 		}
-		mComponentCollection.pop_back();
+		else{
+			itr++;
+		}
 	}
-	mComponentCollection.clear();
+	mComponentMap.clear();
 }
 
-/*template<class T>
-T *BaseGameObject::GetComponent(){
-	for (int i = 0; i < mComponentCollection.size(); i++){
-		if (typeid(T) == typeid(*mComponentCollection[i])){
-			return static_cast<T>(mComponentCollection[i]);
-		}
-	}
-	return 0;
-}*/
+Component *BaseGameObject::GetComponent(componentType_t componentType){
+	return mComponentMap[componentType];
+}
 
 Transform *BaseGameObject::GetTransform(){
-	return mTransform;
+	return (Transform*)mComponentMap[TRANSFORM];
 }
 
-void BaseGameObject::AddComponent(IComponent *component){
-	mComponentCollection.push_back(component);
+void BaseGameObject::AddComponent(Component *component,componentType_t componentType){
+	mComponentMap[componentType] = component;
 }

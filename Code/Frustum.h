@@ -38,6 +38,7 @@ public:
 	bool CheckCube(float, float, float, float);
 	bool CheckSphere(float, float, float, float);
 	bool CheckRectangle(float, float, float, float, float, float);
+	bool CheckRectangleBounds(Vector3f *boundsMin, Vector3f *boundsMax);
 
 	bool CheckBoundingBox(BoundingBox *boundingBox);
 

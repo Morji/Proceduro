@@ -6,24 +6,19 @@ long stop, remaining;//for timer class
 
 GraphicsClass::GraphicsClass(){
 	mScreenWidth = mScreenHeight = 0;
-	mD3D = 0;
-	mTerrain = 0;
-	mCamera = 0;
-	mInput = 0;
-	mCpu = 0;
-	mText = 0;
-	mOrthoTexShader = 0;
-	mFrustum	= 0;
-	mWater = 0;
+	mD3D = nullptr;
+	mTerrain = nullptr;
+	mCamera = nullptr;
+	mInput = nullptr;
+	mCpu = nullptr;
+	mText = nullptr;
+	mFrustum	= nullptr;
+	mWater = nullptr;
+	mSkydome = nullptr;
+	mSun = nullptr;
 
-	mHorizontalBlurShader = 0;
-	mVerticalBlurShader = 0;
-	m_RenderTexture = 0;
-	m_DownSampleTexure = 0;
-	m_HorizontalBlurTexture = 0;
-	m_VerticalBlurTexture = 0;
-	m_UpSampleTexure = 0;
-	mFullScreenWindow = 0;
+	mBlurEffect = nullptr;
+	mFullScreenWindow = nullptr;
 }
 
 
@@ -45,7 +40,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, HIN
 	cout << "Started generation with seed " << timeSeed << endl;
 
 	bool result;
-	D3DXMATRIX basemViewMatrix;
+	D3DXMATRIX baseViewMatrix;
 	char videoCard[128];
 	int videoMemory;
 
@@ -108,71 +103,6 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, HIN
 	InitCameras();
 	InitMisc(hwnd);
 
-	// Create the render to texture object.
-	m_RenderTexture = new RenderTexture;
-	if(!m_RenderTexture){
-		return false;
-	}
-
-	// Initialize the render to texture object.
-	result = m_RenderTexture->Initialize(mD3D->GetDevice(), screenWidth, screenHeight, SCREEN_DEPTH, SCREEN_NEAR);
-	if(!result){
-		MessageBox(hwnd, L"Could not initialize the render to texture object.", L"Error", MB_OK);
-		return false;
-	}
-
-	// Create the down sample render to texture object.
-	m_DownSampleTexure = new RenderTexture;
-	if(!m_DownSampleTexure){
-		return false;
-	}
-
-	// Initialize the down sample render to texture object.
-	result = m_DownSampleTexure->Initialize(mD3D->GetDevice(), downSampleWidth, downSampleHeight, SCREEN_DEPTH, SCREEN_NEAR);
-	if(!result){
-		MessageBox(hwnd, L"Could not initialize the down sample render to texture object.", L"Error", MB_OK);
-		return false;
-	}
-
-	// Create the horizontal blur render to texture object.
-	m_HorizontalBlurTexture = new RenderTexture;
-	if(!m_HorizontalBlurTexture){
-		return false;
-	}
-
-	// Initialize the horizontal blur render to texture object.
-	result = m_HorizontalBlurTexture->Initialize(mD3D->GetDevice(), downSampleWidth, downSampleHeight, SCREEN_DEPTH, SCREEN_NEAR);
-	if(!result){
-		MessageBox(hwnd, L"Could not initialize the horizontal blur render to texture object.", L"Error", MB_OK);
-		return false;
-	}
-
-	// Create the vertical blur render to texture object.
-	m_VerticalBlurTexture = new RenderTexture;
-	if(!m_VerticalBlurTexture){
-		return false;
-	}
-
-	// Initialize the vertical blur render to texture object.
-	result = m_VerticalBlurTexture->Initialize(mD3D->GetDevice(), downSampleWidth, downSampleHeight, SCREEN_DEPTH, SCREEN_NEAR);
-	if(!result){
-		MessageBox(hwnd, L"Could not initialize the vertical blur render to texture object.", L"Error", MB_OK);
-		return false;
-	}
-
-	// Create the up sample render to texture object.
-	m_UpSampleTexure = new RenderTexture;
-	if(!m_UpSampleTexure){
-		return false;
-	}
-
-	// Initialize the up sample render to texture object.
-	result = m_UpSampleTexure->Initialize(mD3D->GetDevice(), screenWidth, screenHeight, SCREEN_DEPTH, SCREEN_NEAR);
-	if(!result){
-		MessageBox(hwnd, L"Could not initialize the up sample render to texture object.", L"Error", MB_OK);
-		return false;
-	}
-
 	// Create the full screen ortho window object.
 	mFullScreenWindow = new OrthoWindow;
 	if(!mFullScreenWindow){
@@ -186,10 +116,17 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, HIN
 		return false;
 	}
 
+	mBlurEffect = new BlurEffect();
+	result = mBlurEffect->Initialize(mD3D,hwnd);
+	if (!result){
+		MessageBox(hwnd, L"Could not initialize the blur effect.", L"Error", MB_OK);
+		return false;
+	}
+
 	// Initialize the text object.
 	mCamera->Render();
-	mCamera->GetViewMatrix(basemViewMatrix);
-	result = mText->Initialize(mD3D->GetDevice(), hwnd, screenWidth, screenHeight, basemViewMatrix);
+	mCamera->GetViewMatrix(&baseViewMatrix);
+	result = mText->Initialize(mD3D->GetDevice(), hwnd, screenWidth, screenHeight, baseViewMatrix);
 	if(!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the text object.", L"Error", MB_OK);
@@ -206,7 +143,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, HIN
 		MessageBox(hwnd, L"Could not set video card info in the text object.", L"Error", MB_OK);
 		return false;
 	}
-	mCamera->SetPosition(-86.0f, 85.0f, -107.0f);
+	mCamera->SetPosition(&Vector3f(-86.0f, 85.0f, -107.0f));
 	return true;
 }
 
@@ -214,30 +151,11 @@ void GraphicsClass::InitCameras(){
 	// Create the god camera object.
 	mCamera = new GameCamera();
 	// Set the initial position of the camera.
-	mCamera->SetPosition(0.0f, 0.0f, -10.0f);
+	mCamera->SetPosition(&Vector3f(0.0f, 0.0f, -10.0f));
 }
 
 void GraphicsClass::InitShaders(HWND hwnd){
 
-	mOrthoTexShader = new OrthoTextureShader();
-	shaderCollection.push_back(mOrthoTexShader);
-
-	// Create the horizontal blur shader object.
-	mHorizontalBlurShader = new HorizontalBlurShader;
-	shaderCollection.push_back(mHorizontalBlurShader);
-
-	// Create the vertical blur shader object.
-	mVerticalBlurShader = new VerticalBlurShader;
-	shaderCollection.push_back(mVerticalBlurShader);
-
-	// Init all shaders
-	for (int i = 0; i < shaderCollection.size(); i++){
-		IShader *shader = shaderCollection[i];
-		bool result = shader->Initialize(mD3D->GetDevice(),hwnd);
-		if (!result){
-			MessageBox(hwnd, L"Error while initializing shader ", L"Error", MB_OK);
-		}
-	}
 }
 
 void GraphicsClass::InitLights(){
@@ -283,6 +201,8 @@ void GraphicsClass::InitTerrain(HWND hwnd){
 	time(&timerEnd); 
 	cout << "Terrain generated in " << difftime(timerEnd,timerStart) << " seconds" << endl;
 
+	mObjectCollection.push_back(mTerrain);
+
 	cout << "Generating Water..." << endl;
 	//init water
 	mWater = new Water(Vector3f(0,50,0));
@@ -291,12 +211,14 @@ void GraphicsClass::InitTerrain(HWND hwnd){
 	if (!result){
 		MessageBox(hwnd, L"Could not initialize mWater object.", L"Error", MB_OK);
 	}
+
+	mObjectCollection.push_back(mWater);
 }
 
 void GraphicsClass::InitMisc(HWND hwnd){
 	bool result;
 	cout << "Generating and Initializing Trees..." << endl;
-	int numTrees = 5;
+	int numTrees = 2;
 	//Generate some trees
 	for (int i = 0; i < numTrees; i++){
 		Vector3f mTreePos = mTerrain->GetRandomPoint();
@@ -308,11 +230,12 @@ void GraphicsClass::InitMisc(HWND hwnd){
 		float minGrowthSize = RandF(0.7f,0.9f);
 		float startRadius = RandF(0.0007f,0.001f);
 		float maxHeight = RandF(25.0f,45.0f);
-		result = tree->GenerateTreeSpaceExploration(minGrowthSize,startRadius,maxHeight);
+		result = tree->GenerateTreeSpaceExploration(mD3D->GetDevice(),minGrowthSize,startRadius,maxHeight);
 		if(!result){
 			MessageBox(hwnd, L"Could not initialize mTree object.", L"Error", MB_OK);
 		}
 		mTreeCollection.push_back(tree);
+		mObjectCollection.push_back(tree);
 		cout << i+1 << " out of " << numTrees << " completed" << endl;
 	}
 
@@ -321,15 +244,40 @@ void GraphicsClass::InitMisc(HWND hwnd){
 	if (!mFrustum){
 		MessageBox(hwnd, L"Could not initialize mFrustum object.", L"Error", MB_OK);
 	}	
+
+	//Init skydome
+	mSkydome = new Skydome();
+	result = mSkydome->Initialize(mD3D->GetDevice(),hwnd);
+	if (!result){
+		MessageBox(hwnd, L"Could not initialize mSkydome object.", L"Error", MB_OK);
+	}
+	mObjectCollection.push_back(mSkydome);
+
+	//Init sun
+	mSun = new Sun();
+	result = mSun->Initialize(mD3D->GetDevice(),hwnd);
+	if (!result){
+		MessageBox(hwnd, L"Could not initialize mSun object.", L"Error", MB_OK);
+	}
+	mSun->SetOrbitPoint(&Vector3f(50,0,50));
+	mSun->SetOrbitDistance(500.0f);
+	Transform *sunTransform = (Transform*)mSun->GetComponent(TRANSFORM);
+	sunTransform->scale = Vector3f(20,20,20);
+	mObjectCollection.push_back(mSun);
 }
 
 void GraphicsClass::Shutdown()
 {
 	// Release the D3D object.
-	if(mD3D){
+	if (mD3D){
 		mD3D->Shutdown();
 		delete mD3D;
 		mD3D = nullptr;
+	}
+
+	if (mBlurEffect){
+		delete mBlurEffect;
+		mBlurEffect = nullptr;
 	}
 
 	if (mInput){
@@ -343,41 +291,33 @@ void GraphicsClass::Shutdown()
 		mFrustum = nullptr;
 	}
 
-	if (mTerrain){
-		delete mTerrain;
-		mTerrain = nullptr;
-	}
-
-	if (mWater){
-		delete mWater;
-		mWater = nullptr;
-	}
-
 	if (mCamera){
 		delete mCamera;
 		mCamera = nullptr;
 	}
 
-	//clean-up trees
-	while (!mTreeCollection.empty()){
-		Tree *tree = mTreeCollection.back();
-		if (tree){
-			delete tree;
-			tree = nullptr;
+	//clean-up game objects
+	while (!mObjectCollection.empty()){
+		BaseGameObject *object = mObjectCollection.back();
+		if (object){
+			delete object;
+			object = nullptr;
 		}
-		mTreeCollection.pop_back();
+		mObjectCollection.pop_back();
 	}
+	mObjectCollection.clear();
 
 	//clean-up shaders
-	while (!shaderCollection.empty()){
-		IShader *shader = shaderCollection.back();
+	while (!mShaderCollection.empty()){
+		IShader *shader = mShaderCollection.back();
 		if (shader){
 			delete shader;
 			shader = nullptr;
 		}
-		shaderCollection.pop_back();
+		mShaderCollection.pop_back();
 	}
-	shaderCollection.clear();
+	mShaderCollection.clear();
+
 	// Release the full screen ortho window object.
 	if(mFullScreenWindow){
 		mFullScreenWindow->Shutdown();
@@ -385,45 +325,8 @@ void GraphicsClass::Shutdown()
 		mFullScreenWindow = 0;
 	}
 
-	
-	// Release the up sample render to texture object.
-	if(m_UpSampleTexure){
-		m_UpSampleTexure->Shutdown();
-		delete m_UpSampleTexure;
-		m_UpSampleTexure = 0;
-	}
-
-	// Release the vertical blur render to texture object.
-	if(m_VerticalBlurTexture){
-		m_VerticalBlurTexture->Shutdown();
-		delete m_VerticalBlurTexture;
-		m_VerticalBlurTexture = 0;
-	}
-
-	// Release the horizontal blur render to texture object.
-	if(m_HorizontalBlurTexture){
-		m_HorizontalBlurTexture->Shutdown();
-		delete m_HorizontalBlurTexture;
-		m_HorizontalBlurTexture = 0;
-	}
-
-	// Release the down sample render to texture object.
-	if(m_DownSampleTexure){
-		m_DownSampleTexure->Shutdown();
-		delete m_DownSampleTexure;
-		m_DownSampleTexure = 0;
-	}
-	
-	// Release the render to texture object.
-	if(m_RenderTexture){
-		m_RenderTexture->Shutdown();
-		delete m_RenderTexture;
-		m_RenderTexture = 0;
-	}
-
 	return;
 }
-
 
 bool GraphicsClass::Frame()
 {
@@ -449,270 +352,71 @@ bool GraphicsClass::Frame()
 	Update(mTimer.getDeltaTime());
 
 	// Render the graphics scene.
-	result = Render();
-	//result = BlurRender();
-	
+	mD3D->BeginScene(0.0f, 0.0f, 0.0f, 0.0f);
+		//result = RenderScene();if(!result)	{return false;}
+		result = BlurRender();if(!result){return false;}
+		result = RenderGUI();if(!result){return false;}
+	mD3D->EndScene();
+
 	if(!result)	{
 		return false;
 	}	
 
 	remaining = stop - mTimer.getCurrTime();
-	if (remaining > 0)
+	if (remaining > 0){
 		Sleep(remaining);		
-
+	}
 	return true;
 }
 
 bool GraphicsClass::BlurRender(){
-	
-	// First render the scene to a render texture.
-	RenderSceneToTexture();
-	
-	// Next down sample the render texture to a smaller sized texture.
-	DownSampleTexture();
-
-	// Perform a horizontal blur on the down sampled render texture.
-	RenderHorizontalBlurToTexture();
-
-	// Now perform a vertical blur on the horizontal blur render texture.
-	RenderVerticalBlurToTexture();
-
-	// Up sample the final blurred render texture to screen size again.
-	UpSampleTexture();
-
-	// Render the blurred up sampled render texture to the screen.
-	Render2DTextureScene();
+	mBlurEffect->PrepareForSceneRender();
+		if (!RenderScene()){return false;}
+	mBlurEffect->SceneRenderFinished();	
+	mBlurEffect->RenderToWindow(mFullScreenWindow);
 
 	return true;
 }
 
-void GraphicsClass::RenderSceneToTexture()
-{
-	// Set the render target to be the render to texture.
-	m_RenderTexture->SetRenderTarget(mD3D->GetDevice());
-
-	// Clear the render to texture.
-	m_RenderTexture->ClearRenderTarget(mD3D->GetDevice(), 0.0f, 0.0f, 0.0f, 1.0f);
-	
-	RenderScene();
-
-	// Reset the render target back to the original back buffer and not the render to texture anymore.
-	mD3D->SetBackBufferRenderTarget();
-
-	// Reset the viewport back to the original.
-	mD3D->ResetViewport();
-
-	return;
-}
-
-void GraphicsClass::DownSampleTexture()
-{
-	// Set the render target to be the render to texture.
-	m_DownSampleTexure->SetRenderTarget(mD3D->GetDevice());
-
-	// Clear the render to texture.
-	m_DownSampleTexure->ClearRenderTarget(mD3D->GetDevice(), 0.0f, 0.0f, 0.0f, 1.0f);
-
-	// Turn off the Z buffer to begin all 2D rendering.
-	mD3D->TurnZBufferOff();
-
-	// Put the ortho window vertex and index buffers on the graphics pipeline to prepare them for drawing.
-	mFullScreenWindow->Render(mD3D->GetDevice());
-
-	// Render the ortho window using the texture shader and the render to texture of the scene as the texture resource.
-	mOrthoTexShader->Render(mD3D->GetDevice(), mFullScreenWindow->GetIndexCount(),	m_RenderTexture->GetShaderResourceView());
-
-	// Turn the Z buffer back on now that all 2D rendering has completed.
-	mD3D->TurnZBufferOn();
-	
-	// Reset the render target back to the original back buffer and not the render to texture anymore.
-	mD3D->SetBackBufferRenderTarget();
-
-	// Reset the viewport back to the original.
-	mD3D->ResetViewport();
-
-	return;
-}
-
-void GraphicsClass::RenderHorizontalBlurToTexture()
-{
-	float screenSizeX;
-
-	// Store the screen width in a float that will be used in the horizontal blur shader.
-	screenSizeX = (float)m_HorizontalBlurTexture->GetTextureWidth();
-	
-	// Set the render target to be the render to texture.
-	m_HorizontalBlurTexture->SetRenderTarget(mD3D->GetDevice());
-
-	// Clear the render to texture.
-	m_HorizontalBlurTexture->ClearRenderTarget(mD3D->GetDevice(), 0.0f, 0.0f, 0.0f, 1.0f);
-
-	// Turn off the Z buffer to begin all 2D rendering.
-	mD3D->TurnZBufferOff();
-
-	// Put the small ortho window vertex and index buffers on the graphics pipeline to prepare them for drawing.
-	mFullScreenWindow->Render(mD3D->GetDevice());
-
-	// Render the small ortho window using the horizontal blur shader and the down sampled render to texture resource.
-	mHorizontalBlurShader->Render(mD3D->GetDevice(), mFullScreenWindow->GetIndexCount(),m_DownSampleTexure->GetShaderResourceView(), screenSizeX);
-
-	// Turn the Z buffer back on now that all 2D rendering has completed.
-	mD3D->TurnZBufferOn();
-
-	// Reset the render target back to the original back buffer and not the render to texture anymore.
-	mD3D->SetBackBufferRenderTarget();
-
-	// Reset the viewport back to the original.
-	mD3D->ResetViewport();
-	
-	return;
-}
-
-void GraphicsClass::RenderVerticalBlurToTexture()
-{
-	float screenSizeY;
-
-	// Store the screen height in a float that will be used in the vertical blur shader.
-	screenSizeY = (float)m_VerticalBlurTexture->GetTextureHeight();
-	
-	// Set the render target to be the render to texture.
-	m_VerticalBlurTexture->SetRenderTarget(mD3D->GetDevice());
-
-	// Clear the render to texture.
-	m_VerticalBlurTexture->ClearRenderTarget(mD3D->GetDevice(), 0.0f, 0.0f, 0.0f, 1.0f);
-
-	// Turn off the Z buffer to begin all 2D rendering.
-	mD3D->TurnZBufferOff();
-
-	// Put the small ortho window vertex and index buffers on the graphics pipeline to prepare them for drawing.
-	mFullScreenWindow->Render(mD3D->GetDevice());
-	
-	// Render the small ortho window using the vertical blur shader and the horizontal blurred render to texture resource.
-	mVerticalBlurShader->Render(mD3D->GetDevice(), mFullScreenWindow->GetIndexCount(),m_HorizontalBlurTexture->GetShaderResourceView(), screenSizeY);
-
-	// Turn the Z buffer back on now that all 2D rendering has completed.
-	mD3D->TurnZBufferOn();
-
-	// Reset the render target back to the original back buffer and not the render to texture anymore.
-	mD3D->SetBackBufferRenderTarget();
-
-	// Reset the viewport back to the original.
-	mD3D->ResetViewport();
-	
-	return;
-}
-
-void GraphicsClass::UpSampleTexture(){
-	// Set the render target to be the render to texture.
-	m_UpSampleTexure->SetRenderTarget(mD3D->GetDevice());
-
-	// Clear the render to texture.
-	m_UpSampleTexure->ClearRenderTarget(mD3D->GetDevice(), 0.0f, 0.0f, 0.0f, 1.0f);
-
-	// Turn off the Z buffer to begin all 2D rendering.
-	mD3D->TurnZBufferOff();
-
-	// Put the full screen ortho window vertex and index buffers on the graphics pipeline to prepare them for drawing.
-	mFullScreenWindow->Render(mD3D->GetDevice());
-
-	// Render the full screen ortho window using the texture shader and the small sized final blurred render to texture resource.
-	mOrthoTexShader->Render(mD3D->GetDevice(), mFullScreenWindow->GetIndexCount(), m_VerticalBlurTexture->GetShaderResourceView());
-
-	// Turn the Z buffer back on now that all 2D rendering has completed.
-	mD3D->TurnZBufferOn();
-	
-	// Reset the render target back to the original back buffer and not the render to texture anymore.
-	mD3D->SetBackBufferRenderTarget();
-
-	// Reset the viewport back to the original.
-	mD3D->ResetViewport();
-
-	return;
-}
-
-void GraphicsClass::Render2DTextureScene(){
-
-	// Clear the buffers to begin the scene.
-	mD3D->BeginScene(1.0f, 0.0f, 0.0f, 0.0f);
-
-	// Turn off the Z buffer to begin all 2D rendering.
-	mD3D->TurnZBufferOff();
-
-	// Put the full screen ortho window vertex and index buffers on the graphics pipeline to prepare them for drawing.
-	mFullScreenWindow->Render(mD3D->GetDevice());
-
-	// Render the full screen ortho window using the texture shader and the full screen sized blurred render to texture resource.
-	mOrthoTexShader->Render(mD3D->GetDevice(), mFullScreenWindow->GetIndexCount(), m_UpSampleTexure->GetShaderResourceView());
-
-	RenderGUI();
-	// Turn the Z buffer back on now that all 2D rendering has completed.
-	mD3D->TurnZBufferOn();
-	
-	// Present the rendered scene to the screen.
-	mD3D->EndScene();
-
-	return;
-}
-
-bool GraphicsClass::Render()
-{
-	mD3D->BeginScene(0.0f, 0.0f, 0.0f, 0.0f);
-
-	if (!RenderScene()){
-		return false;
-	}
-	if (!RenderGUI()){
-		return false;
-	}
-
-	mD3D->EndScene();
-	return true;
-}
 
 bool GraphicsClass::RenderScene(){
 	mCamera->Render();
 
 	// Get the world, view, and projection matrices from the camera and d3d objects.
-	mCamera->GetViewMatrix(mViewMatrix);
+	mCamera->GetViewMatrix(&mViewMatrix);
+	
 	mD3D->GetWorldMatrix(mWorldMatrix);
 	mD3D->GetProjectionMatrix(mProjectionMatrix);
 	mD3D->GetOrthoMatrix(mOrthoMatrix);
 	
-	D3DXVECTOR3 camPos;
-	mCamera->GetPosition(camPos);
+	mCamera->GetPosition(&mCamPos);
+
+	// Render sky first
+	RenderSky();
 
 	// Construct the frustum.
 	mFrustum->ConstructFrustum(SCREEN_DEPTH, mProjectionMatrix, mViewMatrix);
 	int renderCount = 0;
 	
-	mTerrain->Render(mFrustum,mWorldMatrix,mViewMatrix,mProjectionMatrix, camPos,mLight,0);
+	mTerrain->Render(mD3D, mFrustum,mViewMatrix, mCamPos,mLight,0);
 
 	BoundingBox *objectBox;
 	
 	for (int i = 0; i < mTreeCollection.size(); i++){
 		//check if all objects lie within the frustum
-		objectBox = mTreeCollection[i]->GetBoundingBox();
+		objectBox = (BoundingBox*)mTreeCollection[i]->GetComponent(BOUNDING_BOX);
 		if (objectBox){
 			if (mFrustum->CheckBoundingBox(objectBox)){
 				renderCount++;
-				mTreeCollection[i]->Render(mWorldMatrix,mViewMatrix,mProjectionMatrix, camPos,mLight,0);
+				mTreeCollection[i]->Render(mD3D,mViewMatrix,mCamPos,mLight,0);
 			}
 		}
 		else{
-			mTreeCollection[i]->Render(mWorldMatrix,mViewMatrix,mProjectionMatrix, camPos,mLight,0);
+			mTreeCollection[i]->Render(mD3D,mViewMatrix,mCamPos,mLight,0);
 		}
 	}
 	
-	//objectBox = mWater->GetBoundingBox();
-	//if (objectBox){
-		//if (mFrustum->CheckBoundingBox(objectBox)){
-			renderCount++;
-			mD3D->TurnOnAlphaBlending();
-			mWater->Render(mD3D->GetDevice(),mWorldMatrix,mViewMatrix,mProjectionMatrix, camPos,mLight,0);
-			mD3D->TurnOffAlphaBlending();
-		//}
-	//}
-	
+	RenderWater();
 
 	if (!mText->SetRenderCount(mTerrain->GetDrawCount())){
 		return false;
@@ -739,6 +443,31 @@ bool GraphicsClass::RenderGUI(){
 	return true;
 }
 
+void GraphicsClass::RenderSky(){
+	Transform *skyDomeTransform = mSkydome->GetTransform();
+	skyDomeTransform->position = mCamPos;
+	mD3D->TurnCullingOff();	
+		mD3D->TurnZBufferOff();	
+			mSkydome->Render(mD3D,mViewMatrix);	
+			mSun->Render(mD3D,mViewMatrix);
+		mD3D->TurnZBufferOn();	
+	mD3D->TurnCullingOn();
+}
+
+void GraphicsClass::RenderWater(){
+	BoundingBox *objectBox = (BoundingBox*)mWater->GetComponent(BOUNDING_BOX);
+	if (objectBox){
+		if (!mFrustum->CheckBoundingBox(objectBox)){
+			return;
+		}
+	}
+
+	//draw the water
+	mD3D->TurnOnAlphaBlending();
+	mWater->Render(mD3D,mViewMatrix, mCamPos,mLight,0);
+	mD3D->TurnOffAlphaBlending();
+}
+
 void GraphicsClass::Update(float dt){
 	UpdateCamera(dt);
 	if (mInput->IsSpacePressed()){
@@ -759,6 +488,12 @@ void GraphicsClass::Update(float dt){
 		ScreenToClient( mHwnd, &pt );
 		MousePick(pt.x,pt.y);
 	}
+	//update sky
+	mSkydome->Update(dt);
+	mSun->Update(dt);
+	//update light
+	//mSun->GetLightDirection(&mLight.dir);
+	//mSun->GetAmbientLight(&mLight.ambient);
 }
 
 void GraphicsClass::UpdateCamera(float dt){
@@ -780,14 +515,38 @@ void GraphicsClass::UpdateCamera(float dt){
 		mCamera->MoveYawPitch(mouseX/500.0f,mouseY/500.0f);
 	}
 	mCamera->ModifyCamMovement(mInput->GetMouseScroll()/20.0f);
-	D3DXVECTOR3 camPos;
-	mCamera->GetPosition(camPos); 
-	mText->SetCameraPosition(camPos.x,camPos.y,camPos.z);
+	mText->SetCameraPosition(mCamPos.x,mCamPos.y,mCamPos.z);
 }
 
 void GraphicsClass::MousePick(int x, int y){
 	// Compute picking ray in view space.
-	mCamera->GetViewMatrix(mViewMatrix);
+	Vector3f rayOrigin,rayDir;
+
+	ComputeRayFromMouse(x,y,&rayOrigin,&rayDir);
+	//if water handled the picking, do not check against anything else
+	if (mWater->CanHandlePicking(rayOrigin,rayDir)){
+		return;
+	}
+	Transform *treeToMove = nullptr;
+	for (int i = 0; i < mTreeCollection.size(); i++){
+		//check if all objects lie within the frustum
+		BoundingBox *objectBox = (BoundingBox*)mTreeCollection[i]->GetComponent(BOUNDING_BOX);
+		if (objectBox){
+			if (objectBox->IntersectsRay(rayOrigin,rayDir)){
+				treeToMove = mTreeCollection[i]->GetTransform();
+				break;
+			}
+		}
+	}
+	if (treeToMove){
+		treeToMove->position.x += rayDir.x;
+		treeToMove->position.z += rayDir.z;
+		treeToMove->position.y = mTerrain->GetHeight(treeToMove->position.x,treeToMove->position.z);
+	}
+}
+
+void GraphicsClass::ComputeRayFromMouse(int x, int y, Vector3f *outRayOrigin, Vector3f *outRayDir){
+	mCamera->GetViewMatrix(&mViewMatrix);
 	mD3D->GetProjectionMatrix(mProjectionMatrix);
 	mD3D->GetWorldMatrix(mWorldMatrix);
 	float vx = (+2.0f*x/mScreenWidth  - 1.0f)/mProjectionMatrix(0,0);
@@ -825,5 +584,6 @@ void GraphicsClass::MousePick(int x, int y){
     Vector3f direction = farPoint - nearPoint;
 	D3DXVec3Normalize(&direction,&direction);
 
-	mWater->HandlePicking(nearPoint,direction);
+	*outRayOrigin = nearPoint;
+	*outRayDir = direction;
 }

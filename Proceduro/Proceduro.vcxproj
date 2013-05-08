@@ -12,7 +12,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Code\BaseGameObject.cpp" />
+    <ClCompile Include="..\Code\BlurEffect.cpp" />
     <ClCompile Include="..\Code\BoundingBox.cpp" />
+    <ClCompile Include="..\Code\ColorShader.cpp" />
     <ClCompile Include="..\Code\console.cpp" />
     <ClCompile Include="..\Code\cpuclass.cpp" />
     <ClCompile Include="..\Code\d3dclass.cpp" />
@@ -21,11 +23,15 @@
     <ClCompile Include="..\Code\FontShader.cpp" />
     <ClCompile Include="..\Code\Frustum.cpp" />
     <ClCompile Include="..\Code\GameCamera.cpp" />
-    <ClCompile Include="..\Code\GameObject.cpp" />
     <ClCompile Include="..\Code\GameTimer.cpp" />
+    <ClCompile Include="..\Code\GeometryBuilder.cpp" />
     <ClCompile Include="..\Code\GraphicsClass.cpp" />
-    <ClCompile Include="..\Code\HorizontalBlurShader.cpp" />
+    <ClCompile Include="..\Code\Component.cpp" />
     <ClCompile Include="..\Code\Renderer.cpp" />
+    <ClCompile Include="..\Code\Skydome.cpp" />
+    <ClCompile Include="..\Code\SkyShader.cpp" />
+    <ClCompile Include="..\Code\Sun.cpp" />
+    <ClCompile Include="..\Code\SunShader.cpp" />
     <ClCompile Include="..\Code\TerrainHeightShader.cpp" />
     <ClCompile Include="..\Code\OrthoTextureShader.cpp" />
     <ClCompile Include="..\Code\OrthoWindow.cpp" />
@@ -47,13 +53,15 @@
     <ClCompile Include="..\Code\Tree.cpp" />
     <ClCompile Include="..\Code\TreeSegment.cpp" />
     <ClCompile Include="..\Code\TreeShader.cpp" />
-    <ClCompile Include="..\Code\VerticalBlurShader.cpp" />
+    <ClCompile Include="..\Code\BlurShader.cpp" />
     <ClCompile Include="..\Code\Water.cpp" />
     <ClCompile Include="..\Code\WaterShader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Code\BaseGameObject.h" />
+    <ClInclude Include="..\Code\BlurEffect.h" />
     <ClInclude Include="..\Code\BoundingBox.h" />
+    <ClInclude Include="..\Code\ColorShader.h" />
     <ClInclude Include="..\Code\console.h" />
     <ClInclude Include="..\Code\cpuclass.h" />
     <ClInclude Include="..\Code\d3dclass.h" />
@@ -63,12 +71,16 @@
     <ClInclude Include="..\Code\FontShader.h" />
     <ClInclude Include="..\code\Frustum.h" />
     <ClInclude Include="..\Code\GameCamera.h" />
-    <ClInclude Include="..\Code\GameObject.h" />
     <ClInclude Include="..\Code\GameTimer.h" />
+    <ClInclude Include="..\Code\GeometryBuilder.h" />
     <ClInclude Include="..\Code\GraphicsClass.h" />
-    <ClInclude Include="..\Code\HorizontalBlurShader.h" />
-    <ClInclude Include="..\code\IComponent.h" />
+    <ClInclude Include="..\code\Component.h" />
+    <ClInclude Include="..\Code\ID3DObject.h" />
     <ClInclude Include="..\Code\Renderer.h" />
+    <ClInclude Include="..\Code\Skydome.h" />
+    <ClInclude Include="..\Code\SkyShader.h" />
+    <ClInclude Include="..\Code\Sun.h" />
+    <ClInclude Include="..\Code\SunShader.h" />
     <ClInclude Include="..\Code\TerrainHeightShader.h" />
     <ClInclude Include="..\Code\OrthoTextureShader.h" />
     <ClInclude Include="..\Code\OrthoWindow.h" />
@@ -93,7 +105,7 @@
     <ClInclude Include="..\Code\TreeShader.h" />
     <ClInclude Include="..\Code\ValMath.h" />
     <ClInclude Include="..\Code\Vertex.h" />
-    <ClInclude Include="..\Code\VerticalBlurShader.h" />
+    <ClInclude Include="..\Code\BlurShader.h" />
     <ClInclude Include="..\Code\Water.h" />
     <ClInclude Include="..\Code\WaterShader.h" />
   </ItemGroup>
@@ -101,15 +113,17 @@
     <None Include="Shaders\color2.fx" />
     <None Include="Shaders\explodegeometry.fx" />
     <None Include="Shaders\font.fx" />
-    <None Include="Shaders\horizontalblur.fx" />
+    <None Include="Shaders\heightstotexture.fx" />
     <None Include="Shaders\lighthelper.fx" />
     <None Include="Shaders\lighting.fx" />
     <None Include="Shaders\multitexture.fx" />
     <None Include="Shaders\orthotexture.fx" />
     <None Include="Shaders\simpletexture.fx" />
+    <None Include="Shaders\skydome.fx" />
+    <None Include="Shaders\suneffect.fx" />
     <None Include="Shaders\texture.fx" />
     <None Include="Shaders\treemagic.fx" />
-    <None Include="Shaders\verticalblur.fx" />
+    <None Include="Shaders\blur.fx" />
     <None Include="Shaders\watermagic.fx" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

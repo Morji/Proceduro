@@ -95,6 +95,14 @@ D3DX10INLINE D3DXVECTOR3 RandUnitVecInside3()
 	D3DXVECTOR3 v(RandF(), RandF(), RandF());
 	return v;
 }
+
+// Returns random vector in the unit sphere scaled by the given factors.
+D3DX10INLINE D3DXVECTOR3 RandUnitVecInsideScaled3(D3DXVECTOR3 *scaleVec)
+{
+	D3DXVECTOR3 v(RandF()*scaleVec->x, RandF()*scaleVec->y, RandF()*scaleVec->z);
+	return v;
+}
+ 
  
 template<typename T>
 D3DX10INLINE T Min(const T& a, const T& b)

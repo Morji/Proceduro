@@ -1,20 +1,24 @@
 #include "Terrain.h"
 
+//enable/disable debugging
+//#define DEBUG
+
 Terrain::Terrain(void)
 {
 	maxHeight = 0.0f;
 	heightData = nullptr;
 	vertices = nullptr;
 	indices = nullptr;
-	mTerrainShader = 0;
+	mTerrainShader = nullptr;
 	specularMap = 0;
 	mTotalNodes = 0;
-	for (int i = 0; i < 3; i++)
-		diffuseMapRV[i] = 0;
-	mTriangleCount = 0;
+	for (int i = 0; i < 3; i++){
+		diffuseMapRV[i] = nullptr;
+	}
 	mNodeCount = 0;
-	mTrianglesPerNode = 0;
-	mTrianglesLooped = 0;
+
+	mTransform = new Transform(this);
+	AddComponent(mTransform,TRANSFORM);
 }
 
 
@@ -88,15 +92,15 @@ bool Terrain::Initialize(ID3D10Device* device, HWND hwnd){
 	return true;
 }
 
-void Terrain::Render(Frustum* frustum, D3DXMATRIX worldMatrix,D3DXMATRIX viewMatrix,D3DXMATRIX projectionMatrix, Vector3f eyePos, Light light, int lightType){
+void Terrain::Render(ID3DObject *d3dObject,Frustum* frustum, D3DXMATRIX viewMatrix, Vector3f eyePos, Light light, int lightType){
 	D3DXMATRIX mObjMatrix;
+	d3dObject->GetWorldMatrix(mObjMatrix);
 	mTransform->GetTransformMatrix(mObjMatrix);
-	mObjMatrix*=worldMatrix;
 
 	// Reset the number of triangles that are drawn for this frame.
 	mNodeCount = 0;
 	
-	mTerrainShader->SetShaderParameters(md3dDevice,mObjMatrix,viewMatrix,projectionMatrix,
+	mTerrainShader->SetShaderParameters(d3dObject->GetDevice(),mObjMatrix,viewMatrix,*d3dObject->GetProjectionMatrix(),
 							eyePos,
 							light,
 							diffuseMapRV[0]->GetTexture(),
@@ -105,10 +109,10 @@ void Terrain::Render(Frustum* frustum, D3DXMATRIX worldMatrix,D3DXMATRIX viewMat
 							maxHeight,
 							lightType);
 
-	RenderNode(mBaseNode,frustum);
+	RenderNode(mBaseNode, d3dObject, frustum, &viewMatrix);
 }
 
-void Terrain::RenderNode(TerrainNode* node, Frustum* frustum){
+void Terrain::RenderNode(TerrainNode* node, ID3DObject *d3dObject, Frustum* frustum, D3DXMATRIX *viewMatrix){
 	bool result;
 	int count;
 
@@ -124,7 +128,8 @@ void Terrain::RenderNode(TerrainNode* node, Frustum* frustum){
 	for(int i = 0; i < 4; i++){
 		if(node->childNodes[i] != 0){
 			count++;
-			RenderNode(node->childNodes[i], frustum);
+			RenderNode(node->childNodes[i], d3dObject, frustum, viewMatrix);
+			
 		}
 	}
 
@@ -136,10 +141,13 @@ void Terrain::RenderNode(TerrainNode* node, Frustum* frustum){
 	// Otherwise if this node can be seen and has triangles in it then render these triangles.
 
 	// Set vertex buffer stride and offset.
-	node->RenderBuffers(md3dDevice);
+	#ifdef DEBUG
+	node->DrawBounds(d3dObject,*viewMatrix,maxHeight);
+	#endif
+	node->nodeRenderer->RenderBuffers(md3dDevice);
 
 	// Determine the number of indices in this node.
-	int indexCount = node->GetIndexCount();
+	int indexCount = node->nodeRenderer->GetIndexCount();
 
 	// Call the terrain shader to render the polygons in this node.
 	mTerrainShader->Render(md3dDevice, indexCount);
@@ -151,8 +159,6 @@ bool Terrain::CreateTerrain(TerrainGenerator *generator){
 	if (!generator){
 		return false;
 	}
-
-	ResetData();
 	gridWidth = generator->GetWidth();
 	gridDepth = generator->GetDepth();
 
@@ -183,8 +189,6 @@ bool Terrain::CreateTerrain(TerrainGenerator *generator){
 	ComputeTextureCoords();
 	ComputeNormals();
 
-	ComputeIndices();
-
 	ComputeMeshQuadTree();	
 
 	delete [] vertices;
@@ -202,14 +206,13 @@ void Terrain::ComputeMeshQuadTree(){
 
 	vertexCount = gridWidth*gridDepth;
 	indexCount = ((gridWidth-1)*(gridDepth-1)*6);
-	mTriangleCount = indexCount/3;
 
 	//find out how many nodes this terrain is going to be split into
-	mTrianglesPerNode = mTriangleCount;
-	while (mTrianglesPerNode > MAX_TRIANGLES){
-		mTrianglesPerNode /= 2;
+	mVerteciesPerNode = vertexCount;
+	while (mVerteciesPerNode > MAX_VERTICES){
+		mVerteciesPerNode /= 2;
 	}
-	mTotalNodes = mTriangleCount/mTrianglesPerNode;
+	mTotalNodes = vertexCount/mVerteciesPerNode;
 
 	// Initialize the center position of the mesh to zero.
 	centerX = 0.0f;
@@ -261,11 +264,12 @@ void Terrain::ComputeMeshQuadTree(){
 }
 
 void Terrain::CreateTreeNode(TerrainNode *node, float positionX, float positionZ, float diameter){
-	int numTriangles, count, vertexCount, index, vertexIndex;
+	int vertexCount, index;
 	float offsetX, offsetZ;
 	VertexNT* nodeVertices;
 	DWORD* nodeIndices;
 	bool result;	
+	int intDiameter = (int)diameter;
 
 	// Store the node position and size.
 	node->positionX = positionX;
@@ -273,24 +277,24 @@ void Terrain::CreateTreeNode(TerrainNode *node, float positionX, float positionZ
 	node->diameter = diameter;
 
 	// Count the number of triangles that are inside this node.
-	numTriangles = GetTriangleCount(positionX, positionZ, diameter);
+	vertexCount = GetVertexCount(positionX, positionZ, diameter);
 
-	// Case 1: If there are no triangles in this node then return as it is empty and requires no processing.
-	if(numTriangles == 0){
+	// Case 1: If there are no vertices in this node then return as it is empty and requires no processing.
+	if(vertexCount == 0){
 		return;
 	}
 
-	// Case 2: If there are too many triangles in this node then split it into four equal sized smaller tree nodes.
-	if(numTriangles > MAX_TRIANGLES){
+	// Case 2: If there are too many vertices in this node then split it into four equal sized smaller tree nodes.
+	if(vertexCount > MAX_VERTICES){
 		for(int i = 0; i < 4; i++){
 			// Calculate the position offsets for the new child node.
 			offsetX = (((i % 2) < 1) ? -1.0f : 1.0f) * (diameter / 4.0f);
 			offsetZ = (((i % 4) < 2) ? -1.0f : 1.0f) * (diameter / 4.0f);
 
-			// See if there are any triangles in the new node.
-			count = GetTriangleCount((positionX + offsetX), (positionZ + offsetZ), (diameter / 2.0f));
-			if(count > 0){
-				// If there are triangles inside where this new node would be then create the child node.
+			// See if there are any vertices in the new node.
+			vertexCount = GetVertexCount((positionX + offsetX), (positionZ + offsetZ), (diameter / 2.0f));
+			if(vertexCount > 0){
+				// If there are vertices inside where this new node would be then create the child node.
 				node->childNodes[i] = new TerrainNode();
 
 				// Extend the tree starting from this new child node now.
@@ -303,99 +307,80 @@ void Terrain::CreateTreeNode(TerrainNode *node, float positionX, float positionZ
 	mNodeCount++;
 	std::cout << "Initializing node " << mNodeCount << " out of " << mTotalNodes << std::endl;
 
-	// Case 3: If this node is not empty and the triangle count for it is less than the max then 
-	// this node is at the bottom of the tree so create the list of triangles to store in it.
-	node->triangleCount = numTriangles;
-
-	// Calculate the number of vertices.
-	//vertexCount = (diameter+1)*(diameter+1);
-	vertexCount = numTriangles*3;
+	// Case 3: If this node is not empty and the vertex count for it is less than the max then 
+	// this node is at the bottom of the tree so create the list of vertecies to store in it.
 	// Create the vertex array.
-	nodeVertices = new VertexNT[vertexCount];
-	int indexCount = numTriangles*3;
-	// Initialize the index for this new vertex and index array.
+	nodeVertices = new VertexNT[vertexCount];	
+	// Initialize the index for this new vertex array.
 	index = 0;
-	nodeIndices = new DWORD[indexCount];
-	// Go through all the triangles in the vertex list.
-	for(int loop = 0; loop < mTriangleCount; loop++){
-		// If the triangle is inside this node then add it to the vertex array.
-		result = IsTriangleContained(loop, positionX, positionZ, diameter);
+	int totalVertexCount = gridWidth*gridDepth;
+	
+	// Go through all the vertcies in the vertex list.
+	for(int loop = 0; loop < totalVertexCount; loop++){
+		// If the vertex is inside this node then add it to the vertex array.
+		result = IsVertexContained(loop, positionX, positionZ, diameter);
 		if(result == true){			
 			// Calculate the index into the terrain vertex list.
-			vertexIndex = loop * 3;
-
-			// Get the three vertices of this triangle from the vertex list.
-			nodeVertices[index].pos = vertices[indices[vertexIndex]].pos;
-			nodeVertices[index].texC = vertices[indices[vertexIndex]].texC;
-			nodeVertices[index].normal = vertices[indices[vertexIndex]].normal;
-			nodeIndices[index] = index;
-			index++;
-
-			vertexIndex++;
-			nodeVertices[index].pos = vertices[indices[vertexIndex]].pos;
-			nodeVertices[index].texC = vertices[indices[vertexIndex]].texC;
-			nodeVertices[index].normal = vertices[indices[vertexIndex]].normal;
-			nodeIndices[index] = index;
-			index++;
-
-			vertexIndex++;
-			nodeVertices[index].pos = vertices[indices[vertexIndex]].pos;
-			nodeVertices[index].texC = vertices[indices[vertexIndex]].texC;
-			nodeVertices[index].normal = vertices[indices[vertexIndex]].normal;
-			nodeIndices[index] = index;
+			nodeVertices[index].pos = vertices[loop].pos;
+			nodeVertices[index].texC = vertices[loop].texC;
+			nodeVertices[index].normal = vertices[loop].normal;
 			index++;
 		}
-	}	
-	mTrianglesLooped += numTriangles;
-	/*int k = 0;
-	//bool switchPtrn = false;
-	for(int i = 0; i < diameter; ++i){
-		for(int j = 0; j < diameter; ++j){
+	}
 
-			//if (switchPtrn == false){
-				nodeIndices[k] = i*(diameter+1)+j;
-				nodeIndices[k+1] = i*(diameter+1)+j+1;
-				nodeIndices[k+2] = (i+1)*(diameter+1)+j;
+	int k = 0;
+	bool switchPtrn = false;
+	
+	int indexCount = intDiameter*intDiameter*6;
+	
+	nodeIndices = new DWORD[indexCount];
+	for(int i = 0; i < intDiameter; ++i){
+		for(int j = 0; j < intDiameter; ++j){
 
-				nodeIndices[k+3] = (i+1)*(diameter+1)+j;
-				nodeIndices[k+4] = i*(diameter+1)+j+1;
-				nodeIndices[k+5] = (i+1)*(diameter+1)+j+1;
-			/*}
+			if (switchPtrn == false){
+				nodeIndices[k] = i*(intDiameter+1)+j;
+				nodeIndices[k+1] = i*(intDiameter+1)+j+1;
+				nodeIndices[k+2] = (i+1)*(intDiameter+1)+j;
+
+				nodeIndices[k+3] = (i+1)*(intDiameter+1)+j;
+				nodeIndices[k+4] = i*(intDiameter+1)+j+1;
+				nodeIndices[k+5] = (i+1)*(intDiameter+1)+j+1;
+			}
 			else{
-				nodeIndices[k] = i*(diameter+1)+j;
-				nodeIndices[k+1] = i*(diameter+1)+j+1;
-				nodeIndices[k+2] = (i+1)*(diameter+1)+j+1;
+				nodeIndices[k] = i*(intDiameter+1)+j;
+				nodeIndices[k+1] = i*(intDiameter+1)+j+1;
+				nodeIndices[k+2] = (i+1)*(intDiameter+1)+j+1;
 
-				nodeIndices[k+3] = (i+1)*(diameter+1)+j+1;
-				nodeIndices[k+4] = (i+1)*(diameter+1)+j;
-				nodeIndices[k+5] = i*(diameter+1)+j;
+				nodeIndices[k+3] = (i+1)*(intDiameter+1)+j+1;
+				nodeIndices[k+4] = (i+1)*(intDiameter+1)+j;
+				nodeIndices[k+5] = i*(intDiameter+1)+j;
 			}
 			
 			switchPtrn = !switchPtrn;
 			k += 6; // next quad
 		}
-		//switchPtrn = ((int)(diameter+1) % 2 == 1) ?  !switchPtrn : switchPtrn;
-	}*/
+		switchPtrn = ((intDiameter+1) % 2 == 1) ?  !switchPtrn : switchPtrn;
+	}
 
-	result = node->InitializeBuffers<VertexNT>(md3dDevice,nodeIndices,nodeVertices,vertexCount,indexCount);
+	result = node->nodeRenderer->InitializeBuffers(md3dDevice,nodeIndices,nodeVertices,sizeof(VertexNT),vertexCount,indexCount);
+
 
 	// Release the vertex and index arrays now that the data is stored in the buffers in the node.
-	delete [] nodeVertices;
-	nodeVertices = 0;
-
 	delete [] nodeIndices;
-	nodeIndices = 0;
+	nodeIndices = nullptr;
+
+	delete [] nodeVertices;
+	nodeVertices = nullptr;
 }
 
-int	Terrain::GetTriangleCount(float positionX, float positionZ, float diameter){
+int	Terrain::GetVertexCount(float positionX, float positionZ, float diameter)const{
 	int count = 0;
 	bool result;
 
-	// Go through all the triangles in the entire mesh and check which ones should be inside this node.
-	for(int i=0; i<mTriangleCount; i++)
-	{
-		// If the triangle is inside the node then increment the count by one.
-		result = IsTriangleContained(i, positionX, positionZ, diameter);
+	// Go through all the vertices in the entire mesh and check which ones should be inside this node.
+	for(int i=0; i<gridWidth*gridDepth; i++){
+		// If the vertex is inside the node then increment the count by one.
+		result = IsVertexContained(i, positionX, positionZ, diameter);
 		if(result == true){
 			count++;
 		}
@@ -404,71 +389,23 @@ int	Terrain::GetTriangleCount(float positionX, float positionZ, float diameter){
 	return count;
 }
 
-bool Terrain::IsTriangleContained(int index, float positionX, float positionZ, float diameter){
+bool Terrain::IsVertexContained(int index, int positionX, int positionZ, float diameter)const{
 	
-	float radius;
-	int vertexIndex;
-	float x1, z1, x2, z2, x3, z3;
-	float minimumX, maximumX, minimumZ, maximumZ;
+	float radius = diameter / 2.0f;
 
-	// Calculate the radius of this node.
-	radius = diameter / 2.0f;
+	Vector3f pos = vertices[index].pos;
 
-	// Get the index into the vertex list.
-	vertexIndex = index * 3;
-
-	x1 = vertices[indices[vertexIndex]].pos.x;
-	z1 = vertices[indices[vertexIndex]].pos.z;
-	vertexIndex++;
-
-	x2 = vertices[indices[vertexIndex]].pos.x;
-	z2 = vertices[indices[vertexIndex]].pos.z;
-	vertexIndex++;
-
-	x3 = vertices[indices[vertexIndex]].pos.x;
-	z3 = vertices[indices[vertexIndex]].pos.z;
-
-	// Check to see if the minimum of the x coordinates of the triangle is inside the node.
-	minimumX = min(x1, min(x2, x3));
-	if(minimumX > (positionX + radius)){
+	// Check to see if the x coordinates of the vertex is inside the node.
+	if(pos.x > (positionX + radius) || pos.x < (positionX - radius)){
 		return false;
 	}
 
-	// Check to see if the maximum of the x coordinates of the triangle is inside the node.
-	maximumX = max(x1, max(x2, x3));
-	if(maximumX < (positionX - radius)){
-		return false;
-	}
-
-	// Check to see if the minimum of the z coordinates of the triangle is inside the node.
-	minimumZ = min(z1, min(z2, z3));
-	if(minimumZ > (positionZ + radius)){
-		return false;
-	}
-
-	// Check to see if the maximum of the z coordinates of the triangle is inside the node.
-	maximumZ = max(z1, max(z2, z3));
-	if(maximumZ < (positionZ - radius)){
+	// Check to see if the z coordinates of the vertex is inside the node.
+	if(pos.z > (positionZ + radius) || pos.z  < (positionZ - radius)){
 		return false;
 	}
 
 	return true;
-}
-
-void Terrain::ResetData(){
-	maxHeight = 0.0f;
-	if (vertices){
-		delete [] vertices;
-		vertices = nullptr;
-	}
-	if (indices){
-		delete [] indices;
-		indices = nullptr;
-	}
-	if (heightData){
-		delete [] heightData;
-		heightData = nullptr;
-	}
 }
 
 void Terrain::ComputeIndices(){
@@ -576,11 +513,11 @@ void Terrain::ComputeTextureCoords(const int repeatAmount)const{
 	}
 }
 
-float Terrain::GetMaxHeight(){
+float Terrain::GetMaxHeight()const{
 	return maxHeight;
 }
 
-float Terrain::GetHeight(float x, float z){
+float Terrain::GetHeight(float x, float z)const{
 	// Transform from terrain local space to “cell” space.
 	float c = (x + 0.5f*gridWidth) / CELLSPACING;
 	float d = (z - 0.5f*gridDepth) / -CELLSPACING;
@@ -624,19 +561,22 @@ float Terrain::GetHeight(float x, float z){
 	}
 }
 
-Vector3f Terrain::GetRandomPoint(){
+Vector3f Terrain::GetRandomPoint()const{
 	float dx = CELLSPACING;
 	float halfWidth = (gridWidth-1)*dx*0.5f;
 	float halfDepth = (gridDepth-1)*dx*0.5f;
 
-	float z = halfDepth - RandF(0,gridWidth)*dx;		
-	float x = -halfWidth + RandF(0,gridDepth)*dx;
+	float z = RandF(-(float)gridWidth/2,(float)gridWidth/2);		
+	float x = RandF(-(float)gridDepth/2,(float)gridDepth/2);
 
 	float y = GetHeight(x,z);	
+
+	x+=mTransform->position.x;
+	z+=mTransform->position.z;
 
 	return Vector3f(x,y,z);
 }
 
-int Terrain::GetDrawCount(){
+int Terrain::GetDrawCount()const{
 	return mNodeCount;
 }

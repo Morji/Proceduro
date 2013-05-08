@@ -1,25 +1,23 @@
-#include "Shader.h"
+#include "ColorShader.h"
 
 
-Shader::Shader(void)
+ColorShader::ColorShader(void)
 {
-	mEffect = 0;
-	mTechnique = 0;
-	mLayout = 0;
-
-	mWorldMatrix = 0;
-	mViewMatrix = 0;
-	mProjectionMatrix = 0;
+	mWorldMatrix = nullptr;
+	mViewMatrix = nullptr;
+	mProjectionMatrix = nullptr;
 }
 
-Shader::~Shader(void)
+ColorShader::~ColorShader(void)
 {
-	ShutdownShader();
+	mWorldMatrix = nullptr;
+	mViewMatrix = nullptr;
+	mProjectionMatrix = nullptr;
 }
 
 /*The Initialize function will call the initialization function for the shader. 
 We pass in the name of the HLSL shader file*/
-bool Shader::Initialize(ID3D10Device* device, HWND hwnd)
+bool ColorShader::Initialize(ID3D10Device* device, HWND hwnd)
 {
 	bool result;
 
@@ -32,15 +30,7 @@ bool Shader::Initialize(ID3D10Device* device, HWND hwnd)
 	return true;
 }
 
-//The Shutdown function will call the shutdown of the shader.
-void Shader::Shutdown(){
-	// Shutdown the shader effect.
-	ShutdownShader();
-}
-
-/*Render will first set the parameters inside the shader using the SetShaderParameters function. 
-Once the parameters are set it then calls RenderShader to draw using the HLSL shader.*/
-void Shader::Render(ID3D10Device* device, int indexCount, D3DXMATRIX worldMatrix, D3DXMATRIX viewMatrix, D3DXMATRIX projectionMatrix)
+void ColorShader::Render(ID3D10Device* device, int indexCount, D3DXMATRIX worldMatrix, D3DXMATRIX viewMatrix, D3DXMATRIX projectionMatrix)
 {
 	// Set the shader parameters that it will use for rendering.
 	SetShaderParameters(worldMatrix, viewMatrix, projectionMatrix);
@@ -49,11 +39,7 @@ void Shader::Render(ID3D10Device* device, int indexCount, D3DXMATRIX worldMatrix
 	RenderShader(device, indexCount);
 }
 
- /* This function is what actually loads the shader file and makes it usable to DirectX and the GPU. 
- You will also see the setup of the layout and how the vertex buffer data is going to look
- on the graphics pipeline in the GPU. The layout will need the match the Vertex struct in GameObject.h
- as well as the one defined in the shader.fx file*/
-bool Shader::InitializeShader(ID3D10Device* device, HWND hwnd, WCHAR* filename)
+bool ColorShader::InitializeShader(ID3D10Device* device, HWND hwnd, WCHAR* filename)
 {
 	HRESULT result;
 	ID3D10Blob* errorMessage;
@@ -143,70 +129,12 @@ bool Shader::InitializeShader(ID3D10Device* device, HWND hwnd, WCHAR* filename)
 	mWorldMatrix = mEffect->GetVariableByName("worldMatrix")->AsMatrix();
 	mViewMatrix = mEffect->GetVariableByName("viewMatrix")->AsMatrix();
 	mProjectionMatrix = mEffect->GetVariableByName("projectionMatrix")->AsMatrix();
-	mWVPMatrix = mEffect->GetVariableByName("wvpMatrix")->AsMatrix();
 
 	return true;
 }
 
-//ShutdownShader releases the interfaces and pointers that were setup in the InitializeShader function.
-
-void Shader::ShutdownShader(){
-	// Release the pointers to the matrices inside the shader.
-	mWorldMatrix = 0;
-	mViewMatrix = 0;
-	mProjectionMatrix = 0;
-
-	// Release the pointer to the shader layout.
-	ReleaseCOM(mLayout);
-
-	// Release the pointer to the shader technique.
-	mTechnique = 0;
-
-	// Release the pointer to the shader.
-	ReleaseCOM(mEffect);
-}
-
-/*The OutputShaderErrorMessage writes out error messages that are generating when compiling 
-either vertex shaders or pixel shaders.*/
-void Shader::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND hwnd, WCHAR* shaderFilename)
+void ColorShader::SetShaderParameters(D3DXMATRIX worldMatrix, D3DXMATRIX viewMatrix, D3DXMATRIX projectionMatrix)
 {
-	char* compileErrors;
-	unsigned long bufferSize, i;
-	std::ofstream fout;
-
-	// Get a pointer to the error message text buffer.
-	compileErrors = (char*)(errorMessage->GetBufferPointer());
-
-	// Get the length of the message.
-	bufferSize = errorMessage->GetBufferSize();
-
-	// Open a file to write the error message to.
-	fout.open("shader-error.txt");
-
-	// Write out the error message.
-	for(i=0; i<bufferSize; i++){
-		fout << compileErrors[i];
-	}
-
-	// Close the file.
-	fout.close();
-
-	// Release the error message.
-	ReleaseCOM(errorMessage);
-
-	// Pop a message up on the screen to notify the user to check the text file for compile errors.
-	MessageBox(hwnd, L"Error compiling shader.  Check shader-error.txt for message.", shaderFilename, MB_OK);
-}
-
-/*The SetShaderVariables function exists to make setting the global variables in the shader easier. 
-The matrices used in this function are created inside the main app, after which
-this function is called to send them from there into the shader during the Render function call.*/
-void Shader::SetShaderParameters(D3DXMATRIX worldMatrix, D3DXMATRIX viewMatrix, D3DXMATRIX projectionMatrix)
-{
-	// Set the wvp matrix inside the shader
-	D3DXMATRIX mWVP = worldMatrix*viewMatrix*projectionMatrix;
-	mWVPMatrix->SetMatrix((float*)&mWVP);
-
 	// Set the world matrix variable inside the shader.
 	mWorldMatrix->SetMatrix((float*)&worldMatrix);
 
@@ -215,23 +143,4 @@ void Shader::SetShaderParameters(D3DXMATRIX worldMatrix, D3DXMATRIX viewMatrix, 
 
 	// Set the projection matrix variable inside the shader.
 	mProjectionMatrix->SetMatrix((float*)&projectionMatrix);
-}
-
-//RenderShader will invoke the HLSL shader program through the technique pointer.
-void Shader::RenderShader(ID3D10Device* device, int indexCount)
-{
-	D3D10_TECHNIQUE_DESC techniqueDesc;
-
-	// Set the input layout.
-	device->IASetInputLayout(mLayout);
-
-	// Get the description structure of the technique from inside the shader so it can be used for rendering.
-	mTechnique->GetDesc(&techniqueDesc);
-
-	// Go through each pass in the technique (should be just one currently) and render the triangles.
-	for(unsigned int i = 0; i < techniqueDesc.Passes; i++)
-	{
-		mTechnique->GetPassByIndex(i)->Apply(0);
-		device->DrawIndexed(indexCount, 0, 0);
-	}
 }

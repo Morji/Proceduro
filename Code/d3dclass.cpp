@@ -6,24 +6,24 @@
 
 D3DClass::D3DClass()
 {
-	m_device = 0;
-	m_swapChain = 0;
-	m_renderTargetView = 0;
-	m_depthStencilBuffer = 0;
-	m_depthStencilState = 0;
-	m_depthStencilView = 0;
-	mRasterizerSolid = 0;
-	mTransparentBS = 0;
-	mDepthDisabledStencilState = 0;
-	mDrawReflectionBS = 0;
-	mDrawMirrorDSS = 0;
-	mDrawReflectionDSS = 0;
-	mCurrentRasterizer = 0;
-	mDynamicRasterizer = 0;
-	mRasterizerWireframe = 0;
-	mRasterizerCullCWRS = 0;
-	mAlphaEnableBlendingState = 0;
-	mAlphaDisableBlendingState = 0;
+	m_device = nullptr;
+	m_swapChain = nullptr;
+	m_renderTargetView = nullptr;
+	m_depthStencilBuffer = nullptr;
+	m_depthStencilState = nullptr;
+	m_depthStencilView = nullptr;
+	mRasterizerSolid = nullptr;
+	mTransparentBS = nullptr;
+	mDepthDisabledStencilState = nullptr;
+	mDrawReflectionBS = nullptr;
+	mDrawMirrorDSS = nullptr;
+	mDrawReflectionDSS = nullptr;
+	mCurrentRasterizer = nullptr;
+	mDynamicRasterizer = nullptr;
+	mRasterizerWireframe = nullptr;
+	mRasterizerCullCWRS = nullptr;
+	mAlphaEnableBlendingState = nullptr;
+	mAlphaDisableBlendingState = nullptr;
 }
 
 
@@ -231,6 +231,11 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	D3D10_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
 	float fieldOfView, screenAspect;
 
+	// populate screen info
+	mScreenWidth = screenWidth;
+	mScreenHeight = screenHeight;
+	mScreenDepth = screenDepth;
+	mScreenNear = screenNear;
 
 	// Store the vsync setting.
 	m_vsync_enabled = vsync;
@@ -780,33 +785,55 @@ bool D3DClass::Screenshot(){
 	return true;
 }
 
-
 ID3D10Device* D3DClass::GetDevice()
 {
 	return m_device;
 }
 
-
-void D3DClass::GetProjectionMatrix(D3DXMATRIX& projectionMatrix)
+D3DXMATRIX* D3DClass::GetProjectionMatrix()
 {
+	return &m_projectionMatrix;
+}
+
+D3DXMATRIX* D3DClass::GetWorldMatrix()
+{
+	return &m_worldMatrix;
+}
+
+D3DXMATRIX* D3DClass::GetOrthoMatrix()
+{
+	return &m_orthoMatrix;
+}
+
+void D3DClass::GetProjectionMatrix(D3DXMATRIX& projectionMatrix){
 	projectionMatrix = m_projectionMatrix;
-	return;
 }
 
-
-void D3DClass::GetWorldMatrix(D3DXMATRIX& worldMatrix)
-{
+void D3DClass::GetWorldMatrix(D3DXMATRIX& worldMatrix){
 	worldMatrix = m_worldMatrix;
-	return;
 }
 
-
-void D3DClass::GetOrthoMatrix(D3DXMATRIX& orthoMatrix)
-{
+void D3DClass::GetOrthoMatrix(D3DXMATRIX& orthoMatrix){
 	orthoMatrix = m_orthoMatrix;
-	return;
 }
 
+void D3DClass::GetScreenDimensions(int *width, int *height){
+	if (width != nullptr){
+		*width = mScreenWidth;
+	}
+	if (height != nullptr){
+		*height = mScreenHeight;
+	}
+}
+
+void D3DClass::GetScreenDepthInfo(float *nearVal, float *farVal){
+	if (nearVal != nullptr){
+		*nearVal = mScreenNear;
+	}
+	if (farVal != nullptr){
+		*farVal = mScreenDepth;
+	}
+}
 
 void D3DClass::GetVideoCardInfo(char* cardName, int& memory)
 {

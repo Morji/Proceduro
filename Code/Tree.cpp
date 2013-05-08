@@ -1,21 +1,24 @@
 #include "Tree.h"
 
+#include "ValMath.h"
+
 Tree::Tree(Vector3f position){
+	mTransform = new Transform(this);
 	mTransform->position = position;
-	mBoundingBox = new BoundingBox(mTransform);
-	mRenderer = new Renderer(D3D10_PRIMITIVE_TOPOLOGY_POINTLIST);
-	AddComponent(mRenderer);
-	AddComponent(mBoundingBox);
+	mBoundingBox = new BoundingBox(this);
+	mRenderer = new Renderer(this,D3D10_PRIMITIVE_TOPOLOGY_POINTLIST);
+	AddComponent(mTransform,TRANSFORM);
+	AddComponent(mRenderer,RENDERER);
+	AddComponent(mBoundingBox,BOUNDING_BOX);
 }
 
 bool Tree::Initialize(ID3D10Device* device, HWND hwnd){
-	md3dDevice = device;
 	mTreeShader = new TreeShader();
-	if (!mTreeShader->Initialize(md3dDevice,hwnd)){
+	if (!mTreeShader->Initialize(device,hwnd)){
 		MessageBox(hwnd, L"Error while creating new tree shader", L"Error", MB_OK);
 	}
-	treeTexture = new TextureLoader();
-	treeTexture->Initialize(md3dDevice,L"assets/textures/tree_bark.jpg");
+	mTreeTexture = new TextureLoader();
+	mTreeTexture->Initialize(device,L"assets/textures/tree_bark.jpg");
 
 	return true;
 }
@@ -26,47 +29,49 @@ Tree::~Tree(void){
 		delete mTreeShader;
 		mTreeShader = nullptr;
 	}
-	if (treeTexture){
-		treeTexture->Shutdown();
-		delete treeTexture;
-		treeTexture = nullptr;
+	if (mTreeTexture){
+		mTreeTexture->Shutdown();
+		delete mTreeTexture;
+		mTreeTexture = nullptr;
 	}
-	md3dDevice = 0;
 }
 
 
-void Tree::Render(D3DXMATRIX worldMatrix,D3DXMATRIX viewMatrix,D3DXMATRIX projectionMatrix, Vector3f eyePos, Light light, int lightType){
+void Tree::Render(ID3DObject *d3dObject, D3DXMATRIX viewMatrix, Vector3f eyePos, Light light, int lightType){
 	D3DXMATRIX mObjMatrix;
 	mTransform->GetTransformMatrix(mObjMatrix);
-	mObjMatrix*=worldMatrix;
+	mObjMatrix *= *d3dObject->GetWorldMatrix();
 
 	//calculate LOD level
 	float distanceToTree = D3DXVec3Length(&(eyePos - mTransform->position));
 	distanceToTree = clamp(distanceToTree,MIN_DIST,MAX_DIST);
-	int lod = map(distanceToTree,MIN_DIST,MAX_DIST,MAX_LOD,MIN_LOD);
-	mRenderer->RenderBuffers(md3dDevice);
-	mTreeShader->Render(md3dDevice,mRenderer->GetIndexCount(),mObjMatrix,viewMatrix,projectionMatrix,eyePos, treeTexture->GetTexture(), lod, light,lightType);
+	int lod = mapValue(distanceToTree,MIN_DIST,MAX_DIST,MAX_LOD,MIN_LOD);
+	mRenderer->RenderBuffers(d3dObject->GetDevice());
+	mTreeShader->Render(d3dObject->GetDevice(),mRenderer->GetIndexCount(),mObjMatrix,viewMatrix,*d3dObject->GetProjectionMatrix(),eyePos, mTreeTexture->GetTexture(), lod, light,lightType);
 }
 
-bool Tree::GenerateTreeSpaceExploration(float minGrowthSize, float startRadius, float maxHeight){
+bool Tree::GenerateTreeSpaceExploration(ID3D10Device* device, float minGrowthSize, float startRadius, float maxHeight){
+
+	const float sphereScale = maxHeight*0.5f;
+	Vector3f treeShape = RandUnitVecInside3()*maxHeight;
+	Vector3f sphereScaleVec = Vector3f(treeShape.x,sphereScale,treeShape.z);
 
 	//create tree segment list needed for algorithm
 	std::vector<TreeSegment*>	treeSegmentList;
 	mTreeShader->SetMaxHeight(maxHeight);
 
-	const int targetPosSize = 800;
-	const float sphereScale = maxHeight*0.5f;
+	const int targetPosSize = 800;	
 
 	float minInfluenceDist = 4.0f*minGrowthSize;
 	float maxInfluenceDist = 15.0f*minGrowthSize;
 	bool endGrowth = false;	//wether or not the algorithm has finished
 
 	//generate tree trunk to half of maxHeight size
-	int trunkChunks = (int)((maxHeight*0.5f)/minGrowthSize);
+	int trunkChunks = (int)((maxHeight/2.0f)/minGrowthSize);
 	
 	for (int i = 0; i < trunkChunks; i++){
 		TreeSegment *segment = new TreeSegment;
-		segment->SetPosition(Vector3f(sphereScale/2.0f,i*minGrowthSize,sphereScale/2.0f));
+		segment->SetPosition(Vector3f(sphereScaleVec.x/2.0f,i*minGrowthSize,sphereScaleVec.z/2.0f));
 		segment->SetHeight(minGrowthSize);
 		segment->SetRadius(startRadius*2);
 		if (i > 0){
@@ -79,9 +84,7 @@ bool Tree::GenerateTreeSpaceExploration(float minGrowthSize, float startRadius, 
 	std::vector<Vector3f> growthTargetHolder;	
 	for (int i = 0; i < targetPosSize; i++){
 		Vector3f growthTargetPosition;
-		growthTargetPosition = RandUnitVecInside3();	
-		
-		growthTargetPosition *= sphereScale;
+		growthTargetPosition = RandUnitVecInsideScaled3(&sphereScaleVec);	
 		growthTargetPosition.y += sphereScale;
 
 		growthTargetHolder.push_back(growthTargetPosition);	
@@ -182,36 +185,36 @@ bool Tree::GenerateTreeSpaceExploration(float minGrowthSize, float startRadius, 
 	DWORD vertexCount,indexCount;
 	vertexCount = indexCount = treeSegmentList.size();
 	
-	vector<Vector3f*> vertexVector;
-	vector<TreeVertex> treeVertexVector;
+	TreeVertex *vertices = new TreeVertex[vertexCount];
 	for (int i = 0; i < vertexCount; i++){
-		TreeVertex vertex;
-		treeSegmentList[i]->GetPosition(vertex.pos);
-		vertex.radius = treeSegmentList[i]->GetRadius();
+		treeSegmentList[i]->GetPosition(vertices[i].pos);
+		vertices[i].radius = treeSegmentList[i]->GetRadius();
 		TreeSegment *parent = treeSegmentList[i]->GetParent();
 		if (parent){
-			parent->GetPosition(vertex.parent);
-			vertex.parentRadius = parent->GetRadius();
+			parent->GetPosition(vertices[i].parent);
+			vertices[i].parentRadius = parent->GetRadius();
 		}
 		else{
-			vertex.parent = vertex.pos;
-			vertex.parentRadius = vertex.radius;
+			vertices[i].parent = vertices[i].pos;
+			vertices[i].parentRadius = vertices[i].radius;
 		}
-		vertexVector.push_back(&vertex.pos);
-		treeVertexVector.push_back(vertex);
 	}
 
-	mBoundingBox->CalculateBounds(&vertexVector);
+	mBoundingBox->CalculateBounds(&vertices[0].pos,vertexCount,sizeof(TreeVertex));
 
 	DWORD	*indices = new DWORD[indexCount];
 	for (int i = 0; i < indexCount; i++){
 		indices[i] = i;
 	}
-	if (!mRenderer->InitializeBuffers<TreeVertex>(md3dDevice,indices,&treeVertexVector[0],vertexCount,indexCount)){
+
+	if (!mRenderer->InitializeBuffers(device,indices,vertices,sizeof(TreeVertex),vertexCount,indexCount)){
 		return false;
 	}
 
 	//cleanup
+	delete [] vertices;
+	vertices = nullptr;
+
 	delete [] indices;
 	indices = nullptr;
 
@@ -225,15 +228,5 @@ bool Tree::GenerateTreeSpaceExploration(float minGrowthSize, float startRadius, 
 	}
 	treeSegmentList.clear();
 
-	while (treeVertexVector.empty()){
-		treeVertexVector.pop_back();
-	}
-
-	vertexVector.clear();
-	treeVertexVector.clear();
 	return true;
-}
-
-BoundingBox *Tree::GetBoundingBox(){
-	return mBoundingBox;
 }
